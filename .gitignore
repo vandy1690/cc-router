@@ -1,0 +1,14 @@
+# Dependencies (large; node-pty is a native build, rebuild locally)
+node_modules/
+
+# Build output
+dist/
+build/
+out/
+
+# OS / editor
+.DS_Store
+*.log
+
+# Local runtime state (usage sync anchors live in ~/.cc-router, not the repo)
+.cc-router/

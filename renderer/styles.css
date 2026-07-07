@@ -1,0 +1,757 @@
+/* Steven Design Co system — light: warm off-white + slate-blue accent, Inter. */
+:root {
+  --bg: #f0eee9;
+  --surface: #faf9f6;
+  --surface-2: #ffffff;
+  --ink: #23272e;
+  --ink-soft: #5b6068;
+  --ink-faint: #8b9098;
+  --line: #e2ded5;
+  --accent: #4a6fa8;
+  --accent-soft: #dbe4f1;
+  --green: #4f9d69;
+  --amber: #d9a441;
+  --red: #cc5b52;
+  --radius: 12px;
+  --radius-sm: 8px;
+  --shadow: 0 1px 2px rgba(35, 39, 46, 0.05), 0 8px 24px rgba(35, 39, 46, 0.06);
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+html,
+body {
+  margin: 0;
+  height: 100%;
+  background: var(--bg);
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+  user-select: none; /* chrome shouldn't be text-selectable */
+}
+/* But real content should be selectable. */
+.prompt,
+.reasoning,
+.chat-title,
+.project-path,
+.modal-body {
+  user-select: text;
+}
+.titlebar {
+  height: 28px;
+  -webkit-app-region: drag;
+}
+.app {
+  padding: 4px 26px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  width: 100%;
+  max-width: 1440px;
+  margin: 0 auto;
+}
+
+/* 12-column grid: left rail (4) + chat (8). Reproportions and stacks as the
+   window narrows. minmax(0,1fr) lets tracks shrink instead of overflowing. */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 18px;
+  align-items: start;
+}
+.col-left {
+  grid-column: span 4;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.col-right {
+  grid-column: span 8;
+}
+
+/* Mid widths: give the rail a little more room. */
+@media (max-width: 1080px) {
+  .col-left {
+    grid-column: span 5;
+  }
+  .col-right {
+    grid-column: span 7;
+  }
+}
+
+/* Narrow: stack to one column, chat on top. */
+@media (max-width: 780px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+  .col-left,
+  .col-right {
+    grid-column: auto;
+  }
+  .col-right {
+    order: -1;
+  }
+}
+
+/* Header */
+.head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 2px 2px 2px 0;
+}
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.brand-logo {
+  height: 26px;
+  width: auto;
+  fill: var(--accent);
+}
+.brand-title {
+  margin: 0;
+  font-size: 21px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+}
+.hint {
+  font-size: 12px;
+  color: var(--ink-faint);
+}
+kbd {
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  padding: 1px 6px;
+  font-size: 11px;
+  font-family: inherit;
+}
+
+/* Section shells */
+.meters,
+.composer,
+.projects {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 16px 18px;
+}
+.meters-title,
+.projects-title {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ink-faint);
+  margin-bottom: 12px;
+}
+.meters-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.sync-btn {
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent);
+  background: transparent;
+  border: 1px solid var(--accent-soft);
+  border-radius: 999px;
+  padding: 4px 12px;
+  margin-bottom: 12px;
+  cursor: pointer;
+}
+.sync-btn:hover {
+  background: var(--accent-soft);
+}
+.sync-form {
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  margin-bottom: 14px;
+}
+.sync-note {
+  font-size: 12px;
+  color: var(--ink-soft);
+  line-height: 1.5;
+  margin-bottom: 10px;
+}
+.sync-note ol {
+  margin: 6px 0 8px;
+  padding-left: 18px;
+}
+.sync-note li {
+  margin: 2px 0;
+}
+.sync-fields {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.sync-fields label {
+  font-size: 12px;
+  color: var(--ink-soft);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.sync-fields input {
+  width: 54px;
+  font: inherit;
+  font-size: 13px;
+  padding: 4px 8px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--bg);
+}
+.reset-field input {
+  width: 42px;
+}
+.sync-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 12px;
+}
+.synced-tag {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+/* Meters */
+.meter-row {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  padding: 12px 0;
+}
+/* Small rule between each stat grouping. */
+.meter-row + .meter-row {
+  border-top: 1px solid var(--line);
+}
+.meter-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+.meter-label {
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+.meter-pct {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+}
+.meter-pct.over {
+  color: var(--red);
+}
+.meter-bottom {
+  font-size: 11.5px;
+  color: var(--ink-faint);
+}
+.meter-track {
+  height: 8px;
+  border-radius: 6px;
+  background: var(--accent-soft);
+  overflow: hidden;
+}
+.meter-fill {
+  height: 100%;
+  border-radius: 6px;
+  transition: width 0.4s ease;
+}
+.meter-fill.green {
+  background: var(--green);
+}
+.meter-fill.amber {
+  background: var(--amber);
+}
+.meter-fill.red {
+  background: var(--red);
+}
+
+/* Chat column — TailGrids AI-chat composition, in the light system */
+.chatpane {
+  min-height: 560px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  gap: 22px;
+  padding: 4px 0 0;
+}
+/* The class display:flex would otherwise beat the [hidden] attribute, so the
+   compose view and terminal view could never hide. This makes the toggle work. */
+.chatpane[hidden],
+.termpane[hidden] {
+  display: none;
+}
+.welcome {
+  text-align: center;
+}
+.welcome-title {
+  margin: 0 0 8px;
+  font-size: 30px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  background: linear-gradient(90deg, var(--accent), #6b8fbf);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.welcome-sub {
+  margin: 0 auto;
+  max-width: 440px;
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--ink-soft);
+}
+
+/* Composer card: text on top, toolbar row below */
+.composer-card {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface-2);
+  box-shadow: var(--shadow);
+  padding: 16px 18px 12px;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.composer-card:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+.prompt {
+  width: 100%;
+  min-height: 84px;
+  resize: none;
+  border: none;
+  background: transparent;
+  color: var(--ink);
+  padding: 2px 2px 10px;
+  font: inherit;
+  font-size: 16px;
+  line-height: 1.5;
+  outline: none;
+}
+.composer-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+}
+.bar-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.route-slot {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.route-empty {
+  font-size: 12px;
+  color: var(--ink-faint);
+}
+.runin {
+  font-size: 12px;
+  color: var(--ink-faint);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.runin select {
+  font: inherit;
+  font-size: 12px;
+  padding: 5px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink-soft);
+  max-width: 150px;
+}
+.send {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: none;
+  background: var(--accent);
+  color: #fff;
+  cursor: pointer;
+  flex: none;
+  transition: filter 0.15s ease, opacity 0.15s ease;
+}
+.send:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+.send:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+/* Session tabs (one per open Claude Code session, plus a New tab) */
+.term-tabs {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+.term-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font: inherit;
+  font-size: 12.5px;
+  color: var(--ink-soft);
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 6px 8px 6px 13px;
+  max-width: 210px;
+  cursor: pointer;
+}
+.term-tab.active {
+  border-color: var(--accent);
+  color: var(--ink);
+  box-shadow: 0 0 0 2px var(--accent-soft);
+}
+.tab-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tab-close {
+  flex: none;
+  font: inherit;
+  font-size: 12px;
+  line-height: 1;
+  color: inherit;
+  opacity: 0.55;
+  background: transparent;
+  border: none;
+  border-radius: 5px;
+  padding: 2px 5px;
+  cursor: pointer;
+}
+.tab-close:hover {
+  opacity: 1;
+  background: var(--accent-soft);
+}
+.new-tab {
+  padding: 6px 15px;
+  color: var(--accent);
+  font-weight: 600;
+}
+.new-tab.active {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-soft);
+}
+.term-tabs .term-hint {
+  margin-left: auto;
+  color: var(--ink-faint);
+  font-size: 11px;
+}
+
+/* The terminal card (dark), fills the chat column */
+.termpane {
+  display: flex;
+  flex-direction: column;
+  min-height: 600px;
+  border: 1px solid #1e2127;
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: var(--shadow);
+  background: #1e2127;
+}
+.term-body {
+  flex: 1;
+  min-height: 0;
+  padding: 8px 10px;
+}
+.term-mount {
+  height: 100%;
+}
+.term-mount .xterm {
+  height: 100%;
+}
+
+/* Quick-start chips */
+.chips {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.chip {
+  font: inherit;
+  font-size: 13px;
+  color: var(--ink-soft);
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 8px 16px;
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+.chip:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* Model badge */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 5px 12px 5px 8px;
+  cursor: pointer;
+  user-select: none;
+}
+.badge:hover {
+  border-color: var(--accent);
+}
+.badge-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+}
+.badge-name {
+  font-weight: 600;
+  font-size: 13px;
+}
+.badge-cost {
+  font-size: 12px;
+  letter-spacing: 1px;
+  color: var(--ink-faint);
+}
+.badge-conf {
+  font-size: 11px;
+  color: var(--ink-faint);
+  padding-left: 2px;
+}
+.badge.ask {
+  border-color: var(--amber);
+  background: #fdf6e8;
+}
+.ask-note {
+  font-size: 12px;
+  color: var(--amber);
+  font-weight: 600;
+}
+
+/* Reasoning + alternatives */
+.reasoning {
+  margin-top: 10px;
+  font-size: 12.5px;
+  color: var(--ink-soft);
+  background: var(--surface-2);
+  border: 1px dashed var(--line);
+  border-radius: var(--radius-sm);
+  padding: 9px 12px;
+  line-height: 1.5;
+}
+.alts {
+  margin-top: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.alts-label {
+  font-size: 12px;
+  color: var(--ink-faint);
+}
+.alt-chip {
+  font: inherit;
+  font-size: 12px;
+  padding: 5px 11px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--surface-2);
+  color: var(--ink-soft);
+  cursor: pointer;
+}
+.alt-chip:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.alt-chip.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+/* Projects */
+.projects-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 320px;
+  overflow-y: auto;
+}
+.loading {
+  font-size: 13px;
+  color: var(--ink-faint);
+}
+.project {
+  border-radius: var(--radius-sm);
+}
+.project-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 8px;
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+}
+.project-head:hover {
+  background: var(--surface-2);
+}
+.folder {
+  display: inline-flex;
+  color: var(--ink-faint);
+}
+.project.open .folder {
+  color: var(--accent);
+}
+.project-name {
+  font-weight: 600;
+  font-size: 13.5px;
+}
+.chats {
+  display: none;
+  flex-direction: column;
+  padding: 2px 0 4px 26px;
+}
+.project.open .chats {
+  display: flex;
+}
+.chat {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.chat:hover {
+  background: rgba(35, 39, 46, 0.05);
+}
+/* Path + Open in Finder, pinned to the bottom of the expanded folder */
+.project-footer {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 6px;
+  padding: 8px 10px 2px;
+  border-top: 1px solid var(--line);
+}
+.project-path {
+  flex: 1;
+  min-width: 0;
+  font-size: 11px;
+  color: var(--ink-faint);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.finder-btn {
+  flex: none;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--accent);
+  background: transparent;
+  border: 1px solid var(--accent-soft);
+  border-radius: 999px;
+  padding: 4px 11px;
+  cursor: pointer;
+}
+.finder-btn:hover {
+  background: var(--accent-soft);
+}
+.chat-time {
+  font-size: 11px;
+  color: var(--ink-faint);
+  min-width: 92px;
+}
+.chat-title {
+  font-size: 13px;
+  color: var(--ink-soft);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Modal */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(35, 39, 46, 0.28);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+/* The class's display:flex would otherwise beat the [hidden] attribute. */
+.modal-backdrop[hidden] {
+  display: none;
+}
+.modal {
+  background: var(--surface);
+  border-radius: var(--radius);
+  box-shadow: 0 20px 60px rgba(35, 39, 46, 0.28);
+  padding: 22px 24px;
+  width: 420px;
+  max-width: calc(100vw - 40px);
+}
+.modal-title {
+  font-weight: 700;
+  font-size: 16px;
+  margin-bottom: 8px;
+}
+.modal-body {
+  font-size: 13.5px;
+  color: var(--ink-soft);
+  line-height: 1.5;
+  margin-bottom: 18px;
+}
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+.btn-ghost,
+.btn-solid {
+  font: inherit;
+  font-weight: 600;
+  font-size: 13px;
+  padding: 8px 16px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+.btn-ghost {
+  background: transparent;
+  border: 1px solid var(--line);
+  color: var(--ink-soft);
+}
+.btn-solid {
+  background: var(--accent);
+  border: none;
+  color: #fff;
+}
