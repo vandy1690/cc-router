@@ -11,7 +11,7 @@
     "start": "electron ."
   },
   "keywords": [],
-  "author": "Steven Vanden Heuvel",
+  "author": "Steven Design Services LLC",
   "license": "UNLICENSED",
   "devDependencies": {
     "@electron/rebuild": "^4.1.0",

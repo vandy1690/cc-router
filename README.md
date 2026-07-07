@@ -5,7 +5,7 @@ Code. You type a prompt, it routes it to the right Claude model, asks you when i
 unsure, then opens a real, interactive Claude Code session in an embedded terminal.
 It tracks your plan usage live and recalls your past sessions, grouped by project.
 
-> Copyright © 2026 Steven Vanden Heuvel. All rights reserved. Proprietary — see
+> Copyright © 2026 Steven Design Services LLC. All rights reserved. Proprietary — see
 > [LICENSE](LICENSE). This is not open-source software.
 
 ## What it does
@@ -114,6 +114,6 @@ directory. App state (pins, prefs, manual sync) lives in `~/.cc-router/`.
 ## License & ownership
 
 This software and its source code are the proprietary and confidential property
-of Steven Vanden Heuvel. All rights reserved. No permission is granted to use,
+of Steven Design Services LLC. All rights reserved. No permission is granted to use,
 copy, modify, distribute, or claim this software or any part of it without prior
 written permission. See [LICENSE](LICENSE).
