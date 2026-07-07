@@ -27,6 +27,20 @@ It tracks your plan usage live and recalls your past sessions, grouped by projec
   Claude's own AI-generated titles, a model badge per chat, search, pinned
   projects, resume-any-session, and Open in Finder.
 
+## Screenshots
+
+Compose a task; the router picks a model and shows why in a thinking-block —
+**green** when the router chose, **yellow** when it's your call — with live usage
+and recent chats alongside.
+
+![Welcome and compose view](docs/01-welcome.png)
+
+![Routing thinking-block](docs/02-routing.png)
+
+Launch drops you into a real, tabbed Claude Code session running inside the app.
+
+![Embedded Claude Code session](docs/03-session.png)
+
 ## How it compares — in plain English
 
 Model routers already exist, and they're good. **OpenRouter**, **Not Diamond**,

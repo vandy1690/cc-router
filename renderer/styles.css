@@ -548,6 +548,26 @@ kbd {
   font-size: 11px;
 }
 
+/* When a session is active, keep the 4/8 column layout and the rail, but let the
+   terminal column stretch to the bottom of the window (so it isn't cut off). */
+.app.session {
+  height: 100vh;
+}
+.app.session .grid {
+  flex: 1;
+  min-height: 0;
+  align-items: stretch;
+}
+.app.session .col-right {
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.app.session .termpane {
+  flex: 1;
+  min-height: 0;
+}
+
 /* The terminal card (dark), fills the chat column */
 .termpane {
   display: flex;

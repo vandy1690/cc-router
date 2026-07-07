@@ -537,6 +537,7 @@ async function createSession({ cwd, model, sessionId, prompt, title }) {
 
 function activate(id) {
   activeId = id;
+  document.querySelector(".app").classList.add("session"); // full-window terminal
   $("composeView").hidden = true;
   $("termView").hidden = false;
   for (const s of sessions.values()) {
@@ -564,6 +565,7 @@ function activate(id) {
 
 function showCompose() {
   activeId = null;
+  document.querySelector(".app").classList.remove("session"); // back to rail layout
   $("termView").hidden = true;
   $("composeView").hidden = false;
   renderTabs();
