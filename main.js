@@ -11,7 +11,8 @@ const pty = require("node-pty");
 
 const { route } = require("./src/router");
 const { allProjects } = require("./src/sessions");
-const { computeUsage, saveSync } = require("./src/usage");
+const { computeUsage, saveSync, applyLive } = require("./src/usage");
+const { getLiveUsage } = require("./src/live-usage");
 
 let win = null;
 
@@ -67,10 +68,24 @@ app.on("window-all-closed", () => {
 
 ipcMain.handle("route", (_e, prompt) => route(prompt));
 ipcMain.handle("projects", () => allProjects({ limit: 12 }));
-ipcMain.handle("usage", () => computeUsage());
+ipcMain.handle("usage", async () => {
+  const base = await computeUsage();
+  const live = await getLiveUsage();
+  return applyLive(base, live);
+});
+// Force a fresh keychain read (re-triggers the macOS permission prompt).
+ipcMain.handle("usage:enableLive", async () => {
+  const live = await getLiveUsage(0);
+  return { ok: live.ok, reason: live.reason };
+});
 ipcMain.handle("saveSync", (_e, pcts) => saveSync(pcts));
 ipcMain.handle("launch", (_e, opts) => launch(opts));
 ipcMain.handle("openFinder", (_e, cwd) => openFinder(cwd));
+ipcMain.handle("focusWindow", () => showWindow());
+ipcMain.handle("pins:get", () => loadPins());
+ipcMain.handle("pins:toggle", (_e, cwd) => togglePin(cwd));
+ipcMain.handle("prefs:get", () => loadPrefs());
+ipcMain.handle("prefs:set", (_e, { cwd, model }) => setPref(cwd, model));
 
 // --- Embedded Claude Code: multiple PTYs (one per session tab), keyed by id ---
 ipcMain.handle("pty:start", (_e, opts) => ptyStart(opts));
@@ -168,6 +183,52 @@ function ptyKillAll() {
     } catch (_) {}
   }
   ptys.clear();
+}
+
+// Pinned projects (cwd paths) persist next to the sync anchors.
+const PINS_FILE = path.join(os.homedir(), ".cc-router", "pins.json");
+
+function loadPins() {
+  try {
+    return JSON.parse(fs.readFileSync(PINS_FILE, "utf8"));
+  } catch (_) {
+    return [];
+  }
+}
+
+function togglePin(cwd) {
+  const a = loadPins();
+  const i = a.indexOf(cwd);
+  if (i >= 0) a.splice(i, 1);
+  else a.push(cwd);
+  try {
+    fs.mkdirSync(path.dirname(PINS_FILE), { recursive: true });
+    fs.writeFileSync(PINS_FILE, JSON.stringify(a));
+  } catch (_) {}
+  return a;
+}
+
+// Per-project default model (modelKey), learned from your overrides.
+const PREFS_FILE = path.join(os.homedir(), ".cc-router", "prefs.json");
+
+function loadPrefs() {
+  try {
+    return JSON.parse(fs.readFileSync(PREFS_FILE, "utf8"));
+  } catch (_) {
+    return {};
+  }
+}
+
+function setPref(cwd, model) {
+  const p = loadPrefs();
+  if (!cwd) return p;
+  if (model) p[cwd] = model;
+  else delete p[cwd];
+  try {
+    fs.mkdirSync(path.dirname(PREFS_FILE), { recursive: true });
+    fs.writeFileSync(PREFS_FILE, JSON.stringify(p));
+  } catch (_) {}
+  return p;
 }
 
 // Reveal a directory in Finder.

@@ -150,10 +150,47 @@ kbd {
   color: var(--ink-faint);
   margin-bottom: 12px;
 }
+.projects-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+.projects-head .projects-title {
+  margin-bottom: 0;
+}
+.chat-search {
+  font: inherit;
+  font-size: 12px;
+  padding: 5px 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface-2);
+  color: var(--ink);
+  width: 130px;
+  outline: none;
+}
+.chat-search:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-soft);
+}
 .meters-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
+}
+.usage-status {
+  font-weight: 600;
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 11px;
+}
+.usage-status.on {
+  color: var(--accent);
+}
+.usage-status.off {
+  color: var(--ink-faint);
 }
 .sync-btn {
   font: inherit;
@@ -190,10 +227,44 @@ kbd {
 .sync-note li {
   margin: 2px 0;
 }
+
+/* Keychain help panel */
+.keychain-help {
+  background: #fdf6e8;
+  border: 1px solid var(--amber);
+  border-radius: var(--radius-sm);
+  padding: 13px 15px;
+  margin-bottom: 14px;
+}
+.kh-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+  margin-bottom: 6px;
+}
+.kh-body {
+  font-size: 12px;
+  color: var(--ink-soft);
+  line-height: 1.55;
+}
+.kh-body ol {
+  margin: 6px 0 8px;
+  padding-left: 18px;
+}
+.kh-body li {
+  margin: 3px 0;
+}
+.kh-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 12px;
+}
 .sync-fields {
   display: flex;
-  gap: 16px;
-  flex-wrap: wrap;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
 }
 .sync-fields label {
   font-size: 12px;
@@ -211,8 +282,20 @@ kbd {
   border-radius: 6px;
   background: var(--bg);
 }
+.reset-field {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.reset-pair {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--ink-soft);
+}
 .reset-field input {
-  width: 42px;
+  width: 46px;
 }
 .sync-actions {
   display: flex;
@@ -488,6 +571,83 @@ kbd {
   height: 100%;
 }
 
+/* Routing status as an AI-thinking-block: green = router chose, yellow = your call */
+.think-block {
+  margin-top: 12px;
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  box-shadow: var(--shadow);
+  padding: 12px 14px;
+}
+.think-block.green {
+  border-left-color: var(--green);
+}
+.think-block.yellow {
+  border-left-color: var(--amber);
+}
+.think-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+}
+.think-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex: none;
+  animation: tb-pulse 1.6s ease-in-out infinite;
+}
+.think-block.green .think-dot {
+  background: var(--green);
+}
+.think-block.yellow .think-dot {
+  background: var(--amber);
+}
+@keyframes tb-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+.think-block.green .tb-name {
+  color: var(--green);
+}
+.think-block.yellow .tb-name {
+  color: #a9791b;
+}
+.tb-cost {
+  font-size: 12px;
+  letter-spacing: 1px;
+  color: var(--ink-faint);
+  font-weight: 600;
+}
+.think-meta {
+  margin-left: auto;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--ink-faint);
+  white-space: nowrap;
+}
+.think-body {
+  margin-top: 9px;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--ink-soft);
+  background: var(--bg);
+  border-radius: 6px;
+  padding: 9px 11px;
+}
+.think-block .alts {
+  margin-top: 10px;
+}
+
 /* Quick-start chips */
 .chips {
   display: flex;
@@ -553,6 +713,29 @@ kbd {
   font-size: 12px;
   color: var(--amber);
   font-weight: 600;
+}
+.pref-note {
+  font-size: 12px;
+  color: var(--accent);
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.pref-clear {
+  font: inherit;
+  font-size: 11px;
+  line-height: 1;
+  color: var(--ink-faint);
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  padding: 1px 5px;
+  cursor: pointer;
+}
+.pref-clear:hover {
+  color: var(--red);
+  background: var(--accent-soft);
 }
 
 /* Reasoning + alternatives */
@@ -634,6 +817,36 @@ kbd {
   font-weight: 600;
   font-size: 13.5px;
 }
+.pin-btn {
+  margin-left: auto;
+  flex: none;
+  font-size: 13px;
+  line-height: 1;
+  color: var(--ink-faint);
+  background: transparent;
+  border: none;
+  border-radius: 5px;
+  padding: 2px 5px;
+  cursor: pointer;
+}
+.pin-btn:hover {
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+.pin-btn.pinned {
+  color: var(--accent);
+}
+.chat-model {
+  flex: none;
+  margin-left: auto;
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--ink-faint);
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  padding: 1px 6px;
+}
 .chats {
   display: none;
   flex-direction: column;
@@ -692,6 +905,8 @@ kbd {
   min-width: 92px;
 }
 .chat-title {
+  flex: 1;
+  min-width: 0;
   font-size: 13px;
   color: var(--ink-soft);
   overflow: hidden;

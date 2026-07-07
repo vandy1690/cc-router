@@ -12,7 +12,7 @@ const PROJECTS_DIR = path.join(os.homedir(), ".claude", "projects");
 
 // How many lines to scan per session file when hunting for cwd + a title.
 // Titles live near the top; no need to read multi-MB transcripts fully.
-const SCAN_LINES = 300;
+const SCAN_LINES = 400;
 
 function listProjects() {
   if (!fs.existsSync(PROJECTS_DIR)) return [];
@@ -33,15 +33,18 @@ function sessionFiles(projectDir) {
     .sort((a, b) => b.mtime - a.mtime); // most recent first
 }
 
-// Scan the head of a transcript for the real cwd and a human title (the first
-// genuine user message, skipping tool results, system wrappers, and our own
-// classifier prompts).
+// Scan the head of a transcript for cwd, title, and model. Claude Code writes
+// its own AI-generated `ai-title` entries — the best source — so we prefer the
+// latest one seen, falling back to the first genuine user message. The model
+// comes from the latest assistant message in the window.
 function readSessionMeta(file) {
   return new Promise((resolve) => {
     const rl = readline.createInterface({ input: fs.createReadStream(file) });
     let n = 0;
     let cwd = null;
-    let title = null;
+    let aiTitle = null;
+    let userTitle = null;
+    let model = null;
     rl.on("line", (line) => {
       n++;
       if (n > SCAN_LINES) {
@@ -51,7 +54,9 @@ function readSessionMeta(file) {
       try {
         const o = JSON.parse(line);
         if (!cwd && o.cwd) cwd = o.cwd;
-        if (!title && o.type === "user" && o.message) {
+        if (o.type === "ai-title" && o.aiTitle) aiTitle = o.aiTitle;
+        if (o.type === "assistant" && o.message && o.message.model) model = o.message.model;
+        if (!userTitle && o.type === "user" && o.message) {
           const c = o.message.content;
           let txt =
             typeof c === "string"
@@ -60,15 +65,14 @@ function readSessionMeta(file) {
               ? c.map((p) => p.text || "").join(" ")
               : "";
           txt = txt.trim();
-          if (isRealTitle(txt)) title = txt.slice(0, 100);
+          if (isRealTitle(txt)) userTitle = txt.slice(0, 100);
         }
-        if (cwd && title) rl.close();
       } catch (_) {
         /* skip malformed lines */
       }
     });
-    rl.on("close", () => resolve({ cwd, title }));
-    rl.on("error", () => resolve({ cwd: null, title: null }));
+    rl.on("close", () => resolve({ cwd, title: aiTitle || userTitle, model }));
+    rl.on("error", () => resolve({ cwd: null, title: null, model: null }));
   });
 }
 
@@ -93,6 +97,7 @@ async function projectSummary(projectDir, { limit = 25 } = {}) {
       title: meta.title || "(untitled chat)",
       updated: new Date(s.mtime).toISOString(),
       updatedMs: s.mtime,
+      model: meta.model || null,
     });
   }
   return {

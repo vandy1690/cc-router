@@ -221,6 +221,36 @@ function colorFor(pct) {
   return "green";
 }
 
+// Build a meter from authoritative live numbers (no $ — % + real reset only).
+function liveMeter(livePct, resetAtMs) {
+  const pct = Math.round(livePct);
+  return {
+    spent: null,
+    ceiling: null,
+    pct,
+    over: pct >= 100,
+    color: colorFor(pct),
+    resetAt: resetAtMs ? new Date(resetAtMs).toISOString() : null,
+    synced: false,
+    syncedAt: null,
+    resetUserSet: false,
+    live: true,
+  };
+}
+
+// Overlay live session + weekly-all-models numbers onto the proxy/manual meters.
+// Fable has no live header, so it stays on the proxy/manual path.
+function applyLive(base, live) {
+  if (!live || !live.ok) {
+    base.liveError = live ? live.reason : "unknown";
+    return base;
+  }
+  if (live.session) base.session = liveMeter(live.session.pct, live.session.resetAt);
+  if (live.weekly) base.weeklyAll = liveMeter(live.weekly.pct, live.weekly.resetAt);
+  base.live = true;
+  return base;
+}
+
 function round(n) {
   return Math.round(n * 100) / 100;
 }
@@ -235,6 +265,7 @@ function overLimitFor(modelKey, usage) {
 module.exports = {
   computeUsage,
   saveSync,
+  applyLive,
   CEILINGS,
   messageCost,
   lastWeeklyReset,
