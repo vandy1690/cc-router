@@ -27,6 +27,33 @@ It tracks your plan usage live and recalls your past sessions, grouped by projec
   Claude's own AI-generated titles, a model badge per chat, search, pinned
   projects, resume-any-session, and Open in Finder.
 
+## How it compares — in plain English
+
+Model routers already exist, and they're good. **OpenRouter**, **Not Diamond**,
+and **Martian** all pick the best model for a prompt (OpenRouter's "Auto" router
+is powered by Not Diamond). **LiteLLM**, **Portkey**, and the **Vercel AI
+Gateway** add routing, fallback, and cost tracking across many providers. So the
+"pick a model" part of cc-router isn't new — and that's fine; it's a small part.
+
+What those tools don't do is the thing cc-router is built around:
+
+- **They bill per token through their own API. cc-router runs on your Claude
+  subscription.** Using Fable through OpenRouter costs full API price on top of
+  the Max plan you already pay for. cc-router opens real Claude Code sessions on
+  your plan — no second bill.
+- **They're a hosted endpoint. cc-router is a local app that runs real Claude
+  Code** — interactive sessions, tabs, and all of Claude Code's tools, on your
+  machine.
+- **They don't know your plan usage. cc-router shows it live**, reading your true
+  5-hour and weekly limits straight from Anthropic and warning you before you run
+  out.
+- **They don't remember your work. cc-router recalls it** — your past Claude Code
+  sessions, by project, with titles, models, search, and pinning.
+
+Short version: the router is the commodity; the value is a **subscription-native
+launcher for Claude Code** with live usage and session recall — which nothing
+off the shelf replaces.
+
 ## Requirements
 
 - macOS, Node.js 18+, and the `claude` CLI on your PATH (Claude Code).
