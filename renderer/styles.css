@@ -1,76 +1,311 @@
-/* Steven Design Co system — light: warm off-white + slate-blue accent, Inter. */
+/* Claude Code Router on the Steven Design Co. design system.
+
+   The tokens below are the ones stevendesignco.com ships, same names and same
+   values, as documented in the component library:
+   https://stevendesignco.com/labs/sdc-storybook/
+
+   Same rules as the site: light is the default and dark is the alternate; two
+   button weights; 18px cards and 10px controls; the focus ring is the page's
+   own ink and shows only for :focus-visible; the ground carries the dot grain.
+   Cards sit flat. On the site the card shadow belongs to cards that move (the
+   scroll deck, the hover lift). Nothing here animates, so there is no shadow.
+   Only the type sizes differ. The site's scale is set for reading a page, and
+   this is a dense tool, so text sits on the small end of that scale.
+
+   To re-sync after a token change on the site, copy the :root blocks from the
+   site's layout CSS (or storybook/src/sdc.css) over the two blocks below. */
+
+/* ---- Tokens: dark theme (the site's :root) ---- */
 :root {
-  --bg: #f0eee9;
-  --surface: #faf9f6;
-  --surface-2: #ffffff;
-  --ink: #23272e;
-  --ink-soft: #5b6068;
-  --ink-faint: #8b9098;
-  --line: #e2ded5;
-  --accent: #4a6fa8;
-  --accent-soft: #dbe4f1;
-  --green: #4f9d69;
-  --amber: #d9a441;
-  --red: #cc5b52;
-  --radius: 12px;
-  --radius-sm: 8px;
-  --shadow: 0 1px 2px rgba(35, 39, 46, 0.05), 0 8px 24px rgba(35, 39, 46, 0.06);
-  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color-scheme: dark;
+
+  --bg: #000000;
+  --surface: #111111;
+  --surface-2: #1a1a1a;
+  --text: #ffffff;
+  --text-mute: #8a8f8c; /* 5.6:1 on black */
+  --rule: rgba(255, 255, 255, 0.2);
+  --rule-soft: rgba(255, 255, 255, 0.1);
+  --rule-strong: rgba(255, 255, 255, 0.42); /* control borders, clears 3:1 */
+  --texture-dot: rgba(255, 255, 255, 0.07); /* page grain */
+  --texture-size: 20px;
+  --accent: #ccff00;
+  --accent-text: #000000;
+  --accent-hover: #d8ff33;
+  --accent-glow: rgba(204, 255, 0, 0.2);
+  --header-bg: rgba(0, 0, 0, 0.78);
+
+  --radius: 18px; /* cards */
+  --radius-sm: 10px; /* controls */
+
+  --space-xs: 8px;
+  --space-sm: 16px;
+  --space-md: 24px;
+  --space-lg: 32px;
+  --space-xl: 48px;
+
+  --font-display: "nickel-gothic-variable", "Inter Variable", "Inter", system-ui, sans-serif;
+  --font-body: "Inter Variable", "Inter", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --text-display-2: clamp(32px, 4.8vw, 48px);
+  --text-subheading: 20px;
+  --text-body: 16px;
+  --text-nav: 15px;
+  --text-body-sm: 14px;
+  --text-label: 11px;
+
+  /* ---- App-only additions. The site has no status colours, so these come
+     from the component library's own pass/fail pair, plus Dusky Citron (the
+     light palette's optional warm pop) as the warning tone. ---- */
+  --ok: #6ee7a8;
+  --warn: #e2c56e;
+  --over: #ff9b93;
+  --term-bg: #111111; /* the terminal card wears the dark surface in both themes */
 }
 
+/* ---- Tokens: light theme (the shipped default) ---- */
+:root[data-theme="light"] {
+  color-scheme: light;
+
+  --bg: #f0eee9; /* Cloud Dancer */
+  --surface: #e4e1da;
+  --surface-2: #d8d4cb;
+  --text: #2d3436;
+  --text-mute: #5a6160; /* 5.9:1 on paper */
+  --rule: rgba(45, 52, 54, 0.2);
+  --rule-soft: rgba(45, 52, 54, 0.1);
+  --rule-strong: rgba(45, 52, 54, 0.58);
+  --texture-dot: rgba(45, 52, 54, 0.1);
+  --accent: #3f5f92; /* Regatta */
+  --accent-text: #ffffff;
+  --accent-hover: #3d5c8c;
+  --accent-glow: rgba(63, 95, 146, 0.22);
+  --header-bg: rgba(240, 238, 233, 0.82);
+
+  --ok: #17633d; /* 5.6:1 on the card */
+  /* Dusky Citron is 1.3:1 on the card, so a bar in it would vanish. This is the
+     same hue deepened until it clears 3:1 on both grounds (3.7 on the card,
+     4.2 on paper), the way Regatta was deepened to clear 4.5. */
+  --warn: #866f22;
+  --over: #b3261e; /* 5.0:1 on the card */
+}
+
+/* Users asking for more contrast get the muted tones collapsed into the ink. */
+@media (prefers-contrast: more) {
+  :root,
+  :root[data-theme="light"] {
+    --text-mute: var(--text);
+    --rule: var(--rule-strong);
+  }
+}
+
+/* ---- Base ---- */
 * {
   box-sizing: border-box;
+}
+/* `hidden` always wins. Any class that sets display (flex, grid, inline-flex)
+   otherwise beats the attribute, and the element stays on screen. */
+[hidden] {
+  display: none !important;
 }
 html,
 body {
   margin: 0;
   height: 100%;
-  background: var(--bg);
-  color: var(--ink);
+}
+body {
+  /* A fixed frame: titlebar strip, then the app filling the rest. The two
+     columns scroll inside it, so the header and the colophon never move. */
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  /* Dot-grid page grain: one background image, no overlay element. */
+  background-color: var(--bg);
+  background-image: radial-gradient(circle at 1px 1px, var(--texture-dot) 1px, transparent 0);
+  background-size: var(--texture-size) var(--texture-size);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: var(--text-body-sm);
+  line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   user-select: none; /* chrome shouldn't be text-selectable */
 }
 /* But real content should be selectable. */
 .prompt,
-.reasoning,
+.think-body,
 .chat-title,
 .project-path,
+.notice-body,
 .modal-body {
   user-select: text;
 }
+::selection {
+  background: var(--accent);
+  color: var(--accent-text);
+}
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+button {
+  cursor: pointer;
+}
+code,
+kbd {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 0.92em;
+}
+code {
+  background: var(--surface-2);
+  border-radius: 5px;
+  padding: 1px 5px;
+  white-space: nowrap; /* a command never breaks across lines */
+}
+
+/* Focus. The ring is the page's own ink, never the browser blue, identical in
+   both themes, and only for :focus-visible so a mouse click never draws it. */
+:focus-visible {
+  outline: 2px solid var(--text);
+  outline-offset: 3px;
+}
+:focus:not(:focus-visible) {
+  outline: none;
+}
+@media (forced-colors: active) {
+  :focus-visible {
+    outline: 3px solid Highlight;
+    outline-offset: 3px;
+  }
+}
+
+/* Display: Nickel Gothic Variable, normal weight, upright. The face has width
+   and slant axes and no weight axis, so weight is never set on it. */
+.display {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-style: normal;
+  font-variation-settings: "wght" 400, "slnt" 0, "ital" 0;
+  font-synthesis: none;
+  letter-spacing: normal;
+  line-height: 0.96;
+}
+
+.eyebrow {
+  margin: 0;
+  font-size: var(--text-label);
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text);
+}
+
+/* ---- Buttons: two weights only, both on the 10px control radius ---- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: 14px 22px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--rule-strong);
+  background: transparent;
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: var(--text-nav);
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  transition: background 0.14s ease, border-color 0.14s ease, color 0.14s ease, transform 0.12s ease;
+}
+.btn:hover {
+  border-color: var(--text);
+  transform: translateY(-1px);
+}
+.btn--primary {
+  background: var(--accent);
+  color: var(--accent-text);
+  border-color: var(--accent);
+}
+.btn--primary:hover {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+  color: var(--accent-text);
+  box-shadow: 0 14px 40px -10px var(--accent-glow);
+}
+/* The site's button is sized for a page. In panels it steps down. */
+.btn--sm {
+  padding: 7px 13px;
+  font-size: 12.5px;
+}
+
+/* ---- Shell ---- */
 .titlebar {
+  flex: none;
   height: 28px;
   -webkit-app-region: drag;
 }
 .app {
-  padding: 4px 26px 28px;
+  flex: 1;
+  min-height: 0;
+  padding: 4px 26px 14px;
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: var(--space-md);
   width: 100%;
   max-width: 1440px;
   margin: 0 auto;
 }
 
+/* Colophon: bottom right, in the caption size. */
+.colophon {
+  flex: none;
+  margin-top: -8px; /* sits closer to the panes than a full gap */
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 1px;
+  font-size: var(--text-label);
+  line-height: 1.5;
+  letter-spacing: 0.01em;
+  color: var(--text-mute);
+  text-align: right;
+  user-select: text;
+}
+
 /* 12-column grid: left rail (4) + chat (8). Reproportions and stacks as the
    window narrows. minmax(0,1fr) lets tracks shrink instead of overflowing. */
 .grid {
+  flex: 1;
+  min-height: 0;
   display: grid;
   grid-template-columns: repeat(12, minmax(0, 1fr));
-  gap: 18px;
-  align-items: start;
+  gap: var(--space-md);
+  align-items: stretch;
+}
+/* Each column is its own scroller. The padding and matching negative margin
+   leave room for a focus ring at the scroller's edge. */
+.col-left,
+.col-right {
+  min-width: 0;
+  min-height: 0;
+  overflow-y: auto;
+  margin: -6px;
+  padding: 6px;
 }
 .col-left {
   grid-column: span 4;
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: var(--space-md);
+}
+.col-left > * {
+  flex: none; /* panels keep their height; the column scrolls instead */
 }
 .col-right {
   grid-column: span 8;
+  display: flex;
+  flex-direction: column;
 }
-
-/* Mid widths: give the rail a little more room. */
 @media (max-width: 1080px) {
   .col-left {
     grid-column: span 5;
@@ -79,9 +314,16 @@ body {
     grid-column: span 7;
   }
 }
-
-/* Narrow: stack to one column, chat on top. */
+/* Narrow: stack to one column, chat on top, and let the page scroll as one. */
 @media (max-width: 780px) {
+  body {
+    display: block;
+    overflow: auto;
+  }
+  .col-left,
+  .col-right {
+    overflow: visible;
+  }
   .grid {
     grid-template-columns: 1fr;
   }
@@ -94,171 +336,187 @@ body {
   }
 }
 
-/* Header */
+/* ---- Header ---- */
 .head {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 2px 2px 2px 0;
+  gap: var(--space-sm);
 }
 .brand {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
+  min-width: 0;
 }
+/* The mark is ink on paper and lime on black, the same as the site. */
 .brand-logo {
-  height: 26px;
+  height: 24px;
   width: auto;
+  flex: none;
   fill: var(--accent);
+}
+:root[data-theme="light"] .brand-logo {
+  fill: var(--text);
 }
 .brand-title {
   margin: 0;
-  font-size: 21px;
-  font-weight: 700;
-  letter-spacing: -0.02em;
-  color: var(--ink);
+  font-size: 24px;
+  line-height: 1;
+  letter-spacing: 0.01em;
+  color: var(--text);
+  white-space: nowrap;
+}
+.head-right {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
 }
 .hint {
   font-size: 12px;
-  color: var(--ink-faint);
+  color: var(--text-mute);
+  white-space: nowrap;
 }
 kbd {
-  background: var(--surface-2);
-  border: 1px solid var(--line);
+  background: var(--surface);
+  border: 1px solid var(--rule-strong);
   border-radius: 5px;
   padding: 1px 6px;
   font-size: 11px;
-  font-family: inherit;
+}
+.theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  flex: none;
+  background: var(--bg);
+  border: 1px solid var(--rule-strong);
+  border-radius: 999px;
+  color: var(--text);
+  -webkit-app-region: no-drag;
+  transition: border-color 0.14s ease, transform 0.12s ease;
+}
+.theme-toggle:hover {
+  border-color: var(--text);
+  transform: translateY(-1px);
+}
+.theme-toggle__sun {
+  display: block;
+}
+.theme-toggle__moon {
+  display: none;
+}
+:root[data-theme="light"] .theme-toggle__sun {
+  display: none;
+}
+:root[data-theme="light"] .theme-toggle__moon {
+  display: block;
 }
 
-/* Section shells */
-.meters,
-.composer,
-.projects {
+/* ---- Cards ---- */
+.panel,
+.composer-card,
+.think-block {
   background: var(--surface);
-  border: 1px solid var(--line);
   border-radius: var(--radius);
-  box-shadow: var(--shadow);
-  padding: 16px 18px;
 }
-.meters-title,
-.projects-title {
-  font-size: 12px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--ink-faint);
-  margin-bottom: 12px;
+.panel {
+  padding: 18px 20px;
 }
-.projects-head {
+.panel-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  margin-bottom: 8px;
-}
-.projects-head .projects-title {
-  margin-bottom: 0;
-}
-.chat-search {
-  font: inherit;
-  font-size: 12px;
-  padding: 5px 10px;
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  background: var(--surface-2);
-  color: var(--ink);
-  width: 130px;
-  outline: none;
-}
-.chat-search:focus {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 2px var(--accent-soft);
-}
-.meters-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+  min-height: 32px;
+  margin-bottom: 12px;
 }
 .usage-status {
   font-weight: 600;
   text-transform: none;
   letter-spacing: 0;
   font-size: 11px;
+  color: var(--text-mute);
 }
-.usage-status.on {
-  color: var(--accent);
-}
-.usage-status.off {
-  color: var(--ink-faint);
-}
-.sync-btn {
-  font: inherit;
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--accent);
-  background: transparent;
-  border: 1px solid var(--accent-soft);
-  border-radius: 999px;
-  padding: 4px 12px;
-  margin-bottom: 12px;
-  cursor: pointer;
-}
-.sync-btn:hover {
-  background: var(--accent-soft);
-}
-.sync-form {
-  background: var(--surface-2);
-  border: 1px solid var(--line);
+
+/* ---- Inputs ---- */
+.chat-search,
+.sync-fields input,
+.runin select {
+  border: 1px solid var(--rule-strong);
   border-radius: var(--radius-sm);
-  padding: 12px 14px;
+  background: var(--bg);
+  color: var(--text);
+}
+.chat-search {
+  font-size: 12.5px;
+  padding: 6px 10px;
+  width: 140px;
+  min-width: 0;
+}
+.chat-search::placeholder,
+.prompt::placeholder {
+  color: var(--text-mute);
+  opacity: 1;
+}
+
+/* ---- Notices (CLI out of date, Keychain help) ---- */
+.notice {
+  background: var(--bg);
+  border: 1px solid var(--rule-strong);
+  border-left: 3px solid var(--warn);
+  border-radius: var(--radius-sm);
+  padding: 13px 15px;
+}
+.notice[hidden] {
+  display: none;
+}
+.panel .notice {
   margin-bottom: 14px;
 }
-.sync-note {
-  font-size: 12px;
-  color: var(--ink-soft);
-  line-height: 1.5;
-  margin-bottom: 10px;
+.notice-title {
+  font-size: 13px;
+  font-weight: 700;
+  margin-bottom: 6px;
 }
+.notice-body {
+  font-size: 12.5px;
+  color: var(--text);
+  line-height: 1.55;
+}
+.notice-body ol,
 .sync-note ol {
   margin: 6px 0 8px;
   padding-left: 18px;
 }
+.notice-body li,
 .sync-note li {
-  margin: 2px 0;
-}
-
-/* Keychain help panel */
-.keychain-help {
-  background: #fdf6e8;
-  border: 1px solid var(--amber);
-  border-radius: var(--radius-sm);
-  padding: 13px 15px;
-  margin-bottom: 14px;
-}
-.kh-title {
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--ink);
-  margin-bottom: 6px;
-}
-.kh-body {
-  font-size: 12px;
-  color: var(--ink-soft);
-  line-height: 1.55;
-}
-.kh-body ol {
-  margin: 6px 0 8px;
-  padding-left: 18px;
-}
-.kh-body li {
   margin: 3px 0;
 }
-.kh-actions {
+.notice-actions,
+.sync-actions,
+.modal-actions {
   display: flex;
   justify-content: flex-end;
   gap: 8px;
   margin-top: 12px;
+}
+
+/* ---- Manual sync ---- */
+.sync-form {
+  background: var(--bg);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-sm);
+  padding: 13px 15px;
+  margin-bottom: 14px;
+}
+.sync-note {
+  font-size: 12.5px;
+  line-height: 1.5;
+  margin-bottom: 10px;
 }
 .sync-fields {
   display: flex;
@@ -267,111 +525,99 @@ kbd {
   gap: 12px;
 }
 .sync-fields label {
-  font-size: 12px;
-  color: var(--ink-soft);
+  font-size: 12.5px;
   display: flex;
   align-items: center;
   gap: 6px;
 }
 .sync-fields input {
-  width: 54px;
-  font: inherit;
+  width: 58px;
   font-size: 13px;
-  padding: 4px 8px;
-  border: 1px solid var(--line);
-  border-radius: 6px;
-  background: var(--bg);
+  padding: 5px 8px;
+  background: var(--surface);
 }
 .reset-field {
-  display: flex;
-  align-items: center;
-  gap: 10px;
   flex-wrap: wrap;
+  gap: 10px;
 }
 .reset-pair {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  color: var(--ink-soft);
 }
 .reset-field input {
-  width: 46px;
-}
-.sync-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 8px;
-  margin-top: 12px;
-}
-.synced-tag {
-  color: var(--accent);
-  font-weight: 600;
+  width: 50px;
 }
 
-/* Meters */
+/* ---- Meters ----
+   The fill carries severity (accent, then warning, then over) and the track is
+   a lighter step of the same colour, so the state reads across the whole bar.
+   The percentage and the word "over" sit beside it, so colour never works alone. */
 .meter-row {
   display: flex;
   flex-direction: column;
   gap: 7px;
   padding: 12px 0;
 }
-/* Small rule between each stat grouping. */
 .meter-row + .meter-row {
-  border-top: 1px solid var(--line);
+  border-top: 1px solid var(--rule);
+}
+.meter-row:last-child {
+  padding-bottom: 2px;
 }
 .meter-top {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
+  gap: 10px;
 }
 .meter-label {
   font-size: 13px;
-  color: var(--ink-soft);
 }
 .meter-pct {
   font-size: 13px;
-  font-weight: 600;
-  color: var(--ink);
+  font-weight: 700;
 }
 .meter-pct.over {
-  color: var(--red);
+  color: var(--over);
 }
 .meter-bottom {
   font-size: 11.5px;
-  color: var(--ink-faint);
+  color: var(--text-mute);
+}
+.meter-extra {
+  font-size: 11.5px;
+  color: var(--text-mute);
 }
 .meter-track {
+  --meter: var(--accent);
   height: 8px;
-  border-radius: 6px;
-  background: var(--accent-soft);
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--meter) 16%, transparent);
   overflow: hidden;
+}
+.meter-track.warn {
+  --meter: var(--warn);
+}
+.meter-track.over {
+  --meter: var(--over);
 }
 .meter-fill {
   height: 100%;
-  border-radius: 6px;
+  border-radius: 4px;
+  background: var(--meter);
   transition: width 0.4s ease;
 }
-.meter-fill.green {
-  background: var(--green);
-}
-.meter-fill.amber {
-  background: var(--amber);
-}
-.meter-fill.red {
-  background: var(--red);
-}
 
-/* Chat column — TailGrids AI-chat composition, in the light system */
+/* ---- Compose column ---- */
 .chatpane {
-  min-height: 560px;
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
-  gap: 22px;
-  padding: 4px 0 0;
+  gap: var(--space-md);
+  padding-top: var(--space-xs);
 }
-/* The class display:flex would otherwise beat the [hidden] attribute, so the
-   compose view and terminal view could never hide. This makes the toggle work. */
+/* display:flex on the class would otherwise beat the [hidden] attribute. */
 .chatpane[hidden],
 .termpane[hidden] {
   display: none;
@@ -380,252 +626,214 @@ kbd {
   text-align: center;
 }
 .welcome-title {
-  margin: 0 0 8px;
-  font-size: 30px;
-  font-weight: 700;
-  letter-spacing: -0.02em;
-  background: linear-gradient(90deg, var(--accent), #6b8fbf);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+  margin: 0 0 12px;
+  font-size: var(--text-display-2);
+  color: var(--text);
 }
 .welcome-sub {
   margin: 0 auto;
-  max-width: 440px;
-  font-size: 14px;
+  max-width: 46ch;
+  font-size: var(--text-nav);
   line-height: 1.55;
-  color: var(--ink-soft);
+  color: var(--text-mute);
+  text-wrap: pretty;
 }
 
-/* Composer card: text on top, toolbar row below */
-.composer-card {
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  background: var(--surface-2);
-  box-shadow: var(--shadow);
-  padding: 16px 18px 12px;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+/* ---- The drawer: the version recommendation slides out from under the input box.
+   The card sits above it, so the panel seems to come out from inside the box.
+   Height animates through a grid row (0fr to 1fr), so it needs no fixed size,
+   and the panel itself travels down from behind the card's bottom edge.
+   The easing is the site's reveal curve. ---- */
+.composer-wrap {
+  position: relative;
 }
-.composer-card:focus-within {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 3px var(--accent-soft);
+.composer-card {
+  position: relative;
+  z-index: 1;
+}
+.drawer {
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  display: grid;
+  grid-template-rows: 0fr;
+  margin: 0 22px; /* inset past the card's 18px corners */
+  transition: grid-template-rows 0.6s var(--ease-out);
+}
+.drawer.open {
+  grid-template-rows: 1fr;
+}
+.drawer-clip {
+  min-height: 0;
+  overflow: hidden;
+}
+.drawer-body {
+  background: var(--bg);
+  border: 1px solid var(--rule-strong);
+  border-top: 0;
+  border-left: 3px solid var(--warn);
+  border-radius: 0 0 var(--radius-sm) var(--radius-sm);
+  padding: 14px 16px 13px;
+  transform: translateY(-100%);
+  transition: transform 0.6s var(--ease-out);
+}
+.drawer.open .drawer-body {
+  transform: none;
+}
+
+/* Composer card: text on top, toolbar row below. The ring goes on the card, the
+   way the site rings a whole case study card for the link inside it. */
+.composer-card {
+  padding: 18px 20px 14px;
+}
+.composer-card:has(.prompt:focus-visible) {
+  outline: 2px solid var(--text);
+  outline-offset: 3px;
 }
 .prompt {
+  display: block;
   width: 100%;
-  min-height: 84px;
+  min-height: 92px;
   resize: none;
   border: none;
   background: transparent;
-  color: var(--ink);
+  color: var(--text);
   padding: 2px 2px 10px;
-  font: inherit;
-  font-size: 16px;
+  font-size: var(--text-body);
   line-height: 1.5;
-  outline: none;
+}
+.prompt:focus-visible {
+  outline: none; /* the card carries it */
 }
 .composer-bar {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding-top: 10px;
-  border-top: 1px solid var(--line);
+  padding-top: 12px;
+  border-top: 1px solid var(--rule);
+}
+.runin {
+  font-size: 12.5px;
+  color: var(--text-mute);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.runin select {
+  font-size: 12.5px;
+  padding: 6px 8px;
+  max-width: 180px;
 }
 .bar-right {
   display: flex;
   align-items: center;
   gap: 12px;
+  flex: none;
 }
-.route-slot {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.route-empty {
+.launch-hint {
   font-size: 12px;
-  color: var(--ink-faint);
+  color: var(--text-mute);
+  white-space: nowrap;
 }
-.runin {
-  font-size: 12px;
-  color: var(--ink-faint);
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-.runin select {
-  font: inherit;
-  font-size: 12px;
-  padding: 5px 8px;
-  border-radius: 6px;
-  border: 1px solid var(--line);
-  background: var(--surface);
-  color: var(--ink-soft);
-  max-width: 150px;
-}
+/* The one primary action on the screen: an icon button in the accent. */
 .send {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   width: 40px;
   height: 40px;
-  border-radius: 50%;
-  border: none;
-  background: var(--accent);
-  color: #fff;
-  cursor: pointer;
   flex: none;
-  transition: filter 0.15s ease, opacity 0.15s ease;
+  border-radius: 999px;
+  border: 1px solid var(--accent);
+  background: var(--accent);
+  color: var(--accent-text);
+  transition: background 0.14s ease, border-color 0.14s ease, box-shadow 0.14s ease, transform 0.12s ease;
 }
 .send:hover:not(:disabled) {
-  filter: brightness(1.08);
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+  box-shadow: 0 14px 40px -10px var(--accent-glow);
+  transform: translateY(-1px);
 }
 .send:disabled {
-  opacity: 0.35;
+  background: transparent;
+  border-color: var(--rule-strong);
+  color: var(--text-mute);
   cursor: default;
 }
 
-/* Session tabs (one per open Claude Code session, plus a New tab) */
-.term-tabs {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  flex-wrap: wrap;
-  margin-bottom: 12px;
-}
-.term-tab {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  font: inherit;
-  font-size: 12.5px;
-  color: var(--ink-soft);
-  background: var(--surface-2);
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  padding: 6px 8px 6px 13px;
-  max-width: 210px;
-  cursor: pointer;
-}
-.term-tab.active {
-  border-color: var(--accent);
-  color: var(--ink);
-  box-shadow: 0 0 0 2px var(--accent-soft);
-}
-.tab-title {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.tab-close {
-  flex: none;
-  font: inherit;
-  font-size: 12px;
-  line-height: 1;
-  color: inherit;
-  opacity: 0.55;
-  background: transparent;
-  border: none;
-  border-radius: 5px;
-  padding: 2px 5px;
-  cursor: pointer;
-}
-.tab-close:hover {
-  opacity: 1;
-  background: var(--accent-soft);
-}
-.new-tab {
-  padding: 6px 15px;
-  color: var(--accent);
-  font-weight: 600;
-}
-.new-tab.active {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 2px var(--accent-soft);
-}
-.term-tabs .term-hint {
-  margin-left: auto;
-  color: var(--ink-faint);
-  font-size: 11px;
-}
-
-/* When a session is active, keep the 4/8 column layout and the rail, but let the
-   terminal column stretch to the bottom of the window (so it isn't cut off). */
-.app.session {
-  height: 100vh;
-}
-.app.session .grid {
-  flex: 1;
-  min-height: 0;
-  align-items: stretch;
-}
-.app.session .col-right {
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
-}
-.app.session .termpane {
-  flex: 1;
-  min-height: 0;
-}
-
-/* The terminal card (dark), fills the chat column */
-.termpane {
-  display: flex;
-  flex-direction: column;
-  min-height: 600px;
-  border: 1px solid #1e2127;
-  border-radius: var(--radius);
-  overflow: hidden;
-  box-shadow: var(--shadow);
-  background: #1e2127;
-}
-.term-body {
-  flex: 1;
-  min-height: 0;
-  padding: 8px 10px;
-}
-.term-mount {
-  height: 100%;
-}
-.term-mount .xterm {
-  height: 100%;
-}
-
-/* Routing status as an AI-thinking-block: green = router chose, yellow = your call */
+/* ---- Routing status ----
+   "ok" when the router chose, "ask" when it is your call. The title says which
+   in words; the bar and the dot only repeat it. Text stays in ink. */
 .think-block {
-  margin-top: 12px;
-  border: 1px solid var(--line);
-  border-left: 3px solid var(--line);
-  border-radius: var(--radius-sm);
-  background: var(--surface-2);
-  box-shadow: var(--shadow);
-  padding: 12px 14px;
+  --state: var(--rule-strong);
+  position: relative;
+  padding: 14px 18px;
 }
-.think-block.green {
-  border-left-color: var(--green);
+
+/* The reveal. The card slides out from under the prompt card, the way the CLI
+   notice does: inset past the prompt card's corners, flush with its bottom
+   edge, square on top and rounded below. The opening height and the slide run
+   on one duration and one curve, so the card's bottom edge tracks the space as
+   it opens and nothing below jumps. Only transform and grid rows animate. */
+.tb-reveal {
+  --ease-drawer: cubic-bezier(0.22, 1, 0.36, 1);
+  --drawer-time: 0.65s;
+  display: grid;
+  grid-template-rows: 0fr;
+  margin: 0 22px; /* inset past the prompt card's 18px corners */
+  transition: grid-template-rows var(--drawer-time) var(--ease-drawer);
 }
-.think-block.yellow {
-  border-left-color: var(--amber);
+.tb-reveal.open {
+  grid-template-rows: 1fr;
+}
+.tb-clip {
+  min-height: 0;
+  overflow: hidden;
+}
+.tb-reveal .think-block {
+  border: 1px solid var(--rule-strong);
+  border-top: 0;
+  border-radius: 0 0 var(--radius) var(--radius);
+  transform: translateY(-100%);
+  transition: transform var(--drawer-time) var(--ease-drawer);
+  will-change: transform;
+}
+.tb-reveal.open .think-block {
+  transform: none;
+}
+/* Both drawers open at once: the notice keeps its bottom corners square so
+   the routing card reads as the next layer out. */
+.drawer.open + .tb-reveal.open .think-block {
+  border-top: 1px solid var(--rule-strong);
+}
+.think-block.pending {
+  --state: var(--accent);
+}
+.think-block.ok {
+  --state: var(--ok);
+}
+.think-block.ask {
+  --state: var(--warn);
 }
 .think-head {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 13px;
-  font-weight: 600;
+  gap: 9px;
+  font-size: 13.5px;
+  font-weight: 700;
 }
 .think-dot {
   width: 8px;
   height: 8px;
   border-radius: 50%;
   flex: none;
-  animation: tb-pulse 1.6s ease-in-out infinite;
+  background: var(--state);
 }
-.think-block.green .think-dot {
-  background: var(--green);
-}
-.think-block.yellow .think-dot {
-  background: var(--amber);
+/* The dot pulses only while something is actually happening. A settled
+   decision sits still. */
+.think-block.pending .think-dot {
+  animation: tb-pulse 1.2s ease-in-out infinite;
 }
 @keyframes tb-pulse {
   0%,
@@ -636,141 +844,42 @@ kbd {
     opacity: 0.35;
   }
 }
-.think-block.green .tb-name {
-  color: var(--green);
-}
-.think-block.yellow .tb-name {
-  color: #a9791b;
-}
 .tb-cost {
   font-size: 12px;
   letter-spacing: 1px;
-  color: var(--ink-faint);
+  color: var(--text-mute);
   font-weight: 600;
 }
 .think-meta {
   margin-left: auto;
-  font-size: 11px;
+  font-size: 11.5px;
   font-weight: 500;
-  color: var(--ink-faint);
+  color: var(--text-mute);
   white-space: nowrap;
 }
 .think-body {
-  margin-top: 9px;
+  margin-top: 10px;
   font-size: 12.5px;
   line-height: 1.5;
-  color: var(--ink-soft);
   background: var(--bg);
-  border-radius: 6px;
-  padding: 9px 11px;
-}
-.think-block .alts {
-  margin-top: 10px;
-}
-
-/* Quick-start chips */
-.chips {
-  display: flex;
-  justify-content: center;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-.chip {
-  font: inherit;
-  font-size: 13px;
-  color: var(--ink-soft);
-  background: var(--surface-2);
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  padding: 8px 16px;
-  cursor: pointer;
-  transition: border-color 0.15s ease, color 0.15s ease;
-}
-.chip:hover {
-  border-color: var(--accent);
-  color: var(--accent);
-}
-
-/* Model badge */
-.badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  background: var(--surface-2);
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  padding: 5px 12px 5px 8px;
-  cursor: pointer;
-  user-select: none;
-}
-.badge:hover {
-  border-color: var(--accent);
-}
-.badge-dot {
-  width: 9px;
-  height: 9px;
-  border-radius: 50%;
-}
-.badge-name {
-  font-weight: 600;
-  font-size: 13px;
-}
-.badge-cost {
-  font-size: 12px;
-  letter-spacing: 1px;
-  color: var(--ink-faint);
-}
-.badge-conf {
-  font-size: 11px;
-  color: var(--ink-faint);
-  padding-left: 2px;
-}
-.badge.ask {
-  border-color: var(--amber);
-  background: #fdf6e8;
-}
-.ask-note {
-  font-size: 12px;
-  color: var(--amber);
-  font-weight: 600;
-}
-.pref-note {
-  font-size: 12px;
-  color: var(--accent);
-  font-weight: 600;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-}
-.pref-clear {
-  font: inherit;
-  font-size: 11px;
-  line-height: 1;
-  color: var(--ink-faint);
-  background: transparent;
-  border: none;
-  border-radius: 4px;
-  padding: 1px 5px;
-  cursor: pointer;
-}
-.pref-clear:hover {
-  color: var(--red);
-  background: var(--accent-soft);
-}
-
-/* Reasoning + alternatives */
-.reasoning {
-  margin-top: 10px;
-  font-size: 12.5px;
-  color: var(--ink-soft);
-  background: var(--surface-2);
-  border: 1px dashed var(--line);
   border-radius: var(--radius-sm);
   padding: 9px 12px;
-  line-height: 1.5;
+}
+.pref-clear {
+  font-size: 11px;
+  line-height: 1;
+  color: var(--text-mute);
+  background: transparent;
+  border: none;
+  border-radius: 5px;
+  padding: 2px 5px;
+}
+.pref-clear:hover {
+  color: var(--over);
+  background: var(--surface-2);
 }
 .alts {
-  margin-top: 10px;
+  margin-top: 12px;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -778,113 +887,326 @@ kbd {
 }
 .alts-label {
   font-size: 12px;
-  color: var(--ink-faint);
+  color: var(--text-mute);
 }
-.alt-chip {
-  font: inherit;
+/* Effort row: same chips as the model row. The recommended level carries a
+   small dot, so it stays findable after you pick another one. */
+.efforts {
+  margin-top: 8px;
+}
+.efforts:empty {
+  display: none;
+}
+.eff-chip {
+  position: relative;
+}
+.eff-chip.rec::after {
+  content: "";
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.55;
+}
+.eff-note {
   font-size: 12px;
-  padding: 5px 11px;
-  border-radius: 999px;
-  border: 1px solid var(--line);
-  background: var(--surface-2);
-  color: var(--ink-soft);
+  color: var(--text-mute);
+}
+button.eff-note {
+  background: transparent;
+  border: none;
+  padding: 2px 4px;
+  border-radius: 5px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
   cursor: pointer;
 }
-.alt-chip:hover {
-  border-color: var(--accent);
-  color: var(--accent);
-}
-.alt-chip.active {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: #fff;
+button.eff-note:hover {
+  color: var(--text);
 }
 
-/* Projects */
+/* ---- Chips: quick starts and model overrides ----
+   A pressed chip is solid ink, the way the pager and the active deck dot are.
+   The accent stays reserved for the primary action. */
+.chips {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.chips-label {
+  font-size: 12px;
+  color: var(--text-mute);
+  margin-right: 2px;
+}
+.chip,
+.alt-chip {
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  color: var(--text);
+  background: transparent;
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--radius-sm);
+  transition: background 0.14s ease, border-color 0.14s ease, color 0.14s ease, transform 0.12s ease;
+}
+.chip {
+  font-size: 13px;
+  padding: 9px 16px;
+}
+.alt-chip {
+  font-size: 12.5px;
+  padding: 6px 12px;
+}
+.chip:hover,
+.alt-chip:hover {
+  border-color: var(--text);
+  transform: translateY(-1px);
+}
+.alt-chip.active {
+  background: var(--text);
+  border-color: var(--text);
+  color: var(--bg);
+}
+
+/* ---- Session tabs ---- */
+.term-tabs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+.term-tabs[hidden] {
+  display: none;
+}
+.term-tab {
+  display: inline-flex;
+  align-items: center;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text);
+  background: transparent;
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--radius-sm);
+  max-width: 230px;
+  transition: background 0.14s ease, border-color 0.14s ease, color 0.14s ease;
+}
+.term-tab:hover {
+  border-color: var(--text);
+}
+.term-tab.active {
+  background: var(--text);
+  border-color: var(--text);
+  color: var(--bg);
+}
+.tab-select,
+.tab-close {
+  background: transparent;
+  border: none;
+  color: inherit;
+  font-weight: inherit;
+}
+.tab-select {
+  min-width: 0;
+  padding: 7px 4px 7px 13px;
+  border-radius: var(--radius-sm) 0 0 var(--radius-sm);
+}
+.tab-title {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tab-close {
+  flex: none;
+  font-size: 11px;
+  line-height: 1;
+  opacity: 0.6;
+  padding: 7px 10px 7px 6px;
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+}
+.tab-close:hover {
+  opacity: 1;
+}
+/* Inside the solid active tab the ring has to flip to the tab's own text colour. */
+.term-tab.active :focus-visible {
+  outline-color: var(--bg);
+  outline-offset: -4px;
+}
+.new-tab {
+  padding: 7px 14px;
+}
+.term-hint {
+  margin-left: auto;
+  color: var(--text-mute);
+  font-size: 11.5px;
+}
+
+/* In a session the terminal fills its column down to the colophon. */
+.app.session .col-right {
+  overflow: hidden;
+}
+.app.session .termpane {
+  flex: 1;
+  min-height: 0;
+}
+
+/* The terminal card: the dark surface, in both themes. */
+.termpane {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: var(--term-bg);
+}
+:root:not([data-theme="light"]) .termpane {
+  border: 1px solid var(--rule); /* #111 on black needs an edge */
+}
+.term-body {
+  flex: 1;
+  min-height: 0;
+  padding: 12px 14px;
+}
+.term-mount {
+  height: 100%;
+}
+.term-mount .xterm {
+  height: 100%;
+}
+/* xterm paints its own black behind the last partial row. Match the card. */
+.term-mount .xterm .xterm-viewport,
+.term-mount .xterm .xterm-screen {
+  background-color: var(--term-bg) !important;
+}
+
+/* ---- Projects / recall ---- */
 .projects-list {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  max-height: 320px;
+  gap: 2px;
+  max-height: 360px;
   overflow-y: auto;
+  margin: -6px -8px;
+  padding: 6px 8px; /* room for the focus ring (2px + 3px offset) inside the scroller */
+}
+.projects-list::-webkit-scrollbar {
+  width: 8px;
+}
+.projects-list::-webkit-scrollbar-thumb {
+  background: var(--rule-strong);
+  border-radius: 4px;
+  border: 2px solid var(--surface);
 }
 .loading {
   font-size: 13px;
-  color: var(--ink-faint);
-}
-.project {
-  border-radius: var(--radius-sm);
+  color: var(--text-mute);
 }
 .project-head {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 8px;
-  cursor: pointer;
+  gap: 4px;
+}
+.project-toggle {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 8px;
+  text-align: left;
+  background: transparent;
+  border: none;
   border-radius: var(--radius-sm);
 }
-.project-head:hover {
+.project-toggle:hover,
+.chat:hover {
   background: var(--surface-2);
 }
 .folder {
   display: inline-flex;
-  color: var(--ink-faint);
+  flex: none;
+  color: var(--text-mute);
 }
 .project.open .folder {
-  color: var(--accent);
+  color: var(--text);
 }
 .project-name {
   font-weight: 600;
   font-size: 13.5px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .pin-btn {
-  margin-left: auto;
   flex: none;
-  font-size: 13px;
+  font-size: 14px;
   line-height: 1;
-  color: var(--ink-faint);
+  color: var(--text-mute);
   background: transparent;
   border: none;
-  border-radius: 5px;
-  padding: 2px 5px;
-  cursor: pointer;
+  border-radius: 6px;
+  padding: 6px 7px;
+}
+.pin-btn:hover,
+.pin-btn.pinned {
+  color: var(--text);
 }
 .pin-btn:hover {
-  color: var(--accent);
-  background: var(--accent-soft);
-}
-.pin-btn.pinned {
-  color: var(--accent);
-}
-.chat-model {
-  flex: none;
-  margin-left: auto;
-  font-size: 10.5px;
-  font-weight: 600;
-  color: var(--ink-faint);
-  background: var(--bg);
-  border: 1px solid var(--line);
-  border-radius: 5px;
-  padding: 1px 6px;
+  background: var(--surface-2);
 }
 .chats {
   display: none;
   flex-direction: column;
-  padding: 2px 0 4px 26px;
+  padding: 2px 0 6px 24px;
 }
 .project.open .chats {
   display: flex;
 }
+/* Two lines: the title gets the full width of the rail, the time sits under it,
+   and the model badge holds the right edge. On one line the timestamp left room
+   for about three words of title. */
 .chat {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas: "title model" "time model";
   align-items: center;
-  gap: 10px;
-  padding: 6px 10px;
-  border-radius: 6px;
-  cursor: pointer;
+  column-gap: 10px;
+  row-gap: 1px;
+  width: 100%;
+  padding: 7px 10px;
+  text-align: left;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
 }
-.chat:hover {
-  background: rgba(35, 39, 46, 0.05);
+.chat-time {
+  grid-area: time;
+  font-size: 11px;
+  color: var(--text-mute);
+}
+.chat-title {
+  grid-area: title;
+  min-width: 0;
+  font-size: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.chat-model {
+  grid-area: model;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-mute);
+  border: 1px solid var(--rule);
+  border-radius: 5px;
+  padding: 2px 6px;
 }
 /* Path + Open in Finder, pinned to the bottom of the expanded folder */
 .project-footer {
@@ -892,101 +1214,72 @@ kbd {
   align-items: center;
   gap: 10px;
   margin-top: 6px;
-  padding: 8px 10px 2px;
-  border-top: 1px solid var(--line);
+  padding: 10px 10px 2px;
+  border-top: 1px solid var(--rule);
 }
 .project-path {
   flex: 1;
   min-width: 0;
   font-size: 11px;
-  color: var(--ink-faint);
+  color: var(--text-mute);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 .finder-btn {
   flex: none;
-  font: inherit;
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--accent);
-  background: transparent;
-  border: 1px solid var(--accent-soft);
-  border-radius: 999px;
-  padding: 4px 11px;
-  cursor: pointer;
-}
-.finder-btn:hover {
-  background: var(--accent-soft);
-}
-.chat-time {
-  font-size: 11px;
-  color: var(--ink-faint);
-  min-width: 92px;
-}
-.chat-title {
-  flex: 1;
-  min-width: 0;
-  font-size: 13px;
-  color: var(--ink-soft);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  padding: 5px 11px;
+  font-size: 11.5px;
 }
 
-/* Modal */
+/* ---- Modal ---- */
 .modal-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(35, 39, 46, 0.28);
+  z-index: 50;
+  background: rgba(0, 0, 0, 0.3);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
   display: flex;
   align-items: center;
   justify-content: center;
 }
-/* The class's display:flex would otherwise beat the [hidden] attribute. */
 .modal-backdrop[hidden] {
   display: none;
 }
 .modal {
-  background: var(--surface);
+  background: var(--bg);
   border-radius: var(--radius);
-  box-shadow: 0 20px 60px rgba(35, 39, 46, 0.28);
-  padding: 22px 24px;
-  width: 420px;
+  box-shadow: 0 40px 100px -30px rgba(0, 0, 0, 0.45);
+  padding: 24px 26px;
+  width: 440px;
   max-width: calc(100vw - 40px);
 }
+:root:not([data-theme="light"]) .modal {
+  border: 1px solid var(--rule);
+}
 .modal-title {
-  font-weight: 700;
-  font-size: 16px;
-  margin-bottom: 8px;
+  margin: 0 0 10px;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-variation-settings: "wght" 400, "slnt" 0, "ital" 0;
+  font-synthesis: none;
+  font-size: var(--text-subheading);
+  line-height: 1.1;
+  letter-spacing: 0.01em;
 }
 .modal-body {
   font-size: 13.5px;
-  color: var(--ink-soft);
-  line-height: 1.5;
+  line-height: 1.55;
   margin-bottom: 18px;
 }
-.modal-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 10px;
-}
-.btn-ghost,
-.btn-solid {
-  font: inherit;
-  font-weight: 600;
-  font-size: 13px;
-  padding: 8px 16px;
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-}
-.btn-ghost {
-  background: transparent;
-  border: 1px solid var(--line);
-  color: var(--ink-soft);
-}
-.btn-solid {
-  background: var(--accent);
-  border: none;
-  color: #fff;
+
+/* ---- Motion ---- */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
 }

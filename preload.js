@@ -1,7 +1,20 @@
 // Safe bridge between the renderer and the main-process engines.
 const { contextBridge, ipcRenderer } = require("electron");
 
+// The main process passes the saved theme on the command line so it is known
+// synchronously, before first paint. Light is the shipped default.
+const themeArg = process.argv.find((a) => a.startsWith("--cc-theme="));
+const initialTheme = themeArg && themeArg.split("=")[1] === "dark" ? "dark" : "light";
+const hotkeyArg = process.argv.find((a) => a.startsWith("--cc-hotkey="));
+const hotkey = hotkeyArg ? hotkeyArg.split("=")[1] || null : null;
+
 contextBridge.exposeInMainWorld("cc", {
+  initialTheme,
+  hotkey, // the global summon key that registered, or null
+  setTheme: (theme) => ipcRenderer.invoke("ui:setTheme", theme),
+  models: () => ipcRenderer.invoke("models"),
+  checkCli: () => ipcRenderer.invoke("cli:check"),
+  routeRules: (prompt) => ipcRenderer.invoke("route:rules", prompt),
   route: (prompt) => ipcRenderer.invoke("route", prompt),
   projects: () => ipcRenderer.invoke("projects"),
   usage: () => ipcRenderer.invoke("usage"),

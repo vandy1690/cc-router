@@ -1,0 +1,16 @@
+{
+  "name": "cc-router",
+  "description": "Claude Code Router: model routing for Claude Code, from Steven Design Services LLC.",
+  "owner": {
+    "name": "Steven Design Services LLC",
+    "url": "https://stevendesignco.com"
+  },
+  "plugins": [
+    {
+      "name": "cc-router",
+      "source": "./",
+      "description": "Model routing inside Claude Code: prompt-size nudges, one-turn tier commands, and model-pinned subagents.",
+      "version": "1.0.0"
+    }
+  ]
+}
