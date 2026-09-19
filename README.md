@@ -239,6 +239,8 @@ session, the week, the weekly Fable limit, and the week's split by surface. The 
 Code OAuth token is read from the macOS Keychain, used only in the request header, and
 never logged, stored, or refreshed by this app. Claude Code owns the login.
 
+<img src="docs/08-real-usage.png" alt="The usage panel in real use: the 5-hour session at 83%, the week at 95% in red, and the weekly Fable limit at 83%, each with its reset time" width="491" />
+
 That endpoint is not a documented public API, so there are two fallbacks. First, the
 `anthropic-ratelimit-unified-5h-*` and `-7d-*` headers on a one-token request, which
 cover the session and the week. Then a weighted estimate from your local transcripts
