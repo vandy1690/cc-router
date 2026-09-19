@@ -6,8 +6,8 @@
 //   node src/cli.js --selftest --live                (also run the classifier cases; uses your plan)
 //   node src/cli.js --rubric                         (print the tier table; the plugin's /route skill reads this)
 
-const { route, ruleDecision } = require("./router");
-const { MODELS, ORDER } = require("./models");
+const { route, ruleDecision, effortFor } = require("./router");
+const { MODELS, ORDER, EFFORTS } = require("./models");
 
 // Rules-only expectations. `null` means "the rules must stay out of it and
 // hand the prompt to the classifier". The second block is the regression list:
@@ -37,6 +37,14 @@ const RULE_CASES = [
   ["fix the typo in every file", null], // small word + big word: a contradiction
 ];
 
+// Recommended --effort per rule that fires. Max is never recommended.
+const EFFORT_CASES = [
+  ["fix the typo in the header comment", "low"],
+  ["migrate our Express routes to Fastify across the whole repo", "xhigh"],
+  ["why is this useEffect causing an infinite render loop?", "high"],
+  ["update the button hover color in Button.tsx and Card.tsx and Nav.tsx and Modal.tsx", "high"],
+];
+
 // Ambiguous prompts worth eyeballing against the live classifier.
 const LIVE_CASES = [
   "add a dark mode toggle to the settings component",
@@ -64,6 +72,25 @@ async function selftest(live) {
     console.log(`${ok ? "PASS" : "FAIL"}  ${String(got || "classifier").padEnd(10)} ${prompt}${ok ? "" : `   (wanted ${want || "classifier"})`}`);
   }
   console.log(`\n${RULE_CASES.length - failed}/${RULE_CASES.length} rule cases passed.`);
+
+  // Effort: the rule-driven levels, then every model's baseline (what the
+  // classifier path uses) must be a value `claude --effort` accepts, and never max.
+  let effFailed = 0;
+  for (const [prompt, want] of EFFORT_CASES) {
+    const got = ruleDecision(prompt).effort;
+    const ok = got === want;
+    if (!ok) effFailed++;
+    console.log(`${ok ? "PASS" : "FAIL"}  effort ${String(got).padEnd(6)} ${prompt}${ok ? "" : `   (wanted ${want})`}`);
+  }
+  for (const k of ORDER) {
+    const e = effortFor(k, null);
+    const ok = EFFORTS.includes(e) && e !== "max";
+    if (!ok) effFailed++;
+    console.log(`${ok ? "PASS" : "FAIL"}  effort ${String(e).padEnd(6)} ${MODELS[k].label} baseline`);
+  }
+  const effTotal = EFFORT_CASES.length + ORDER.length;
+  console.log(`\n${effTotal - effFailed}/${effTotal} effort cases passed.`);
+  failed += effFailed;
   if (live) {
     console.log("\nLive classifier cases:\n");
     for (const p of LIVE_CASES) console.log(fmt(p, await route(p)) + "\n");

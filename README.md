@@ -182,28 +182,53 @@ brings the routing sense into the editor.
 
 ## Requirements
 
-- macOS, Node.js 18 or newer, and the `claude` CLI on your PATH (Claude Code).
-- Claude Code 2.1.260 or newer for the full catalog. Sonnet 5 needs 2.1.197, Opus 5
-  needs 2.1.219, and Fable 5.1 needs 2.1.260. Run `claude update` to get current.
-- A Claude subscription. It is built around Max, and sessions run on your plan, not
-  the API.
+**To run the app**
+
+- **macOS 12 (Monterey) or newer.** The bundled Electron 43 will not start on older
+  versions.
+- **Node.js 18 or newer** and npm. `package.json` declares this in `engines`.
+- **Xcode Command Line Tools** (`xcode-select --install`). `node-pty`, which runs the
+  embedded terminals, is a native module and is compiled on install.
+- **Claude Code** (the `claude` CLI) installed and logged in. The app finds it in
+  `~/.local/bin` or on your shell's PATH, even when opened from the Dock.
+- **Claude Code 2.1.260 or newer for the full catalog.** Sonnet 5 needs 2.1.197, Opus 5
+  needs 2.1.219, and Fable 5.1 needs 2.1.260. Older versions still work for the models
+  they know, and the app says which ones need `claude update`.
+- **A Claude Code that lists `--effort` in `claude --help`** for the effort control.
+  Tested on 2.1.278. Without it, the effort row is hidden and sessions start at Claude
+  Code's default effort.
+- **A Claude subscription.** It is built around Max. Sessions and the routing
+  classifier run on your plan, not the API.
+
+**Optional**
+
+- **Keychain access** for the live usage meter. macOS asks once; choose Always Allow.
+  Without it, the meter falls back to an estimate from your local transcripts.
+- **A network connection** for the display face (Nickel Gothic from Adobe Fonts).
+  Offline, headings fall back to Inter, which ships with the app.
+
+**For the plugin**
+
+- Claude Code 2.1.260 or newer. The manifest passes `claude plugin validate` on 2.1.277.
 
 ## Setup
 
-`node_modules` is not committed, and `node-pty` is a native module that must be built
-for Electron:
+`node_modules` is not committed. `npm install` also builds `node-pty` for Electron (a
+`postinstall` step), so two commands are enough:
 
 ```bash
-npm install
-npx electron-rebuild -f -w node-pty   # build node-pty against Electron's ABI
-npm start                             # launch the app
+npm install   # installs, then rebuilds node-pty against Electron's ABI
+npm start     # launch the app
 ```
+
+If the terminals ever fail to start after an Electron or Node update, run
+`npm run rebuild`.
 
 The engines also run headless, without the UI:
 
 ```bash
 npm run route -- "migrate our API across the repo"   # route one prompt
-npm run route:test                                   # assert the routing rules (free, no network)
+npm run route:test                                   # assert the routing and effort rules (free, no network)
 npm run projects                                     # recent chats by project
 npm run usage                                        # usage meter from local transcripts
 ```
@@ -229,7 +254,8 @@ npm run usage                                        # usage meter from local tr
    that fired moves it: a small task drops to `low`, hard reasoning or several named
    files goes to `high`, a whole-codebase sweep goes to `xhigh`.
 
-`npm run route:test` asserts all of this, including the prompts that used to misroute.
+`npm run route:test` asserts all of this, including the prompts that used to misroute
+and the recommended effort for each rule.
 
 ## How usage tracking works
 

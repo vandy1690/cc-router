@@ -452,6 +452,9 @@ function renderRoute() {
   }
 
   // Override chips: every model in the catalog, the chosen one pressed.
+  // Rebuilding the row drops focus, so note which chip had it and put it back;
+  // otherwise a keyboard user lands on <body> after every press.
+  const focusedKey = alts.contains(document.activeElement) ? document.activeElement.dataset.key : null;
   alts.innerHTML =
     `<span class="alts-label" id="altsLabel">Use:</span>` +
     ORDER.map(
@@ -465,6 +468,10 @@ function renderRoute() {
       renderRoute();
     })
   );
+  if (focusedKey) {
+    const again = alts.querySelector(`.alt-chip[data-key="${focusedKey}"]`);
+    if (again) again.focus();
+  }
 
   renderEfforts(key);
 
@@ -482,6 +489,10 @@ function renderEfforts(key) {
   }
   const rec = recommendedEffort(key);
   const cur = currentEffort(key);
+  // Same focus rule as the model row. The reset link removes itself, so focus
+  // moves to the chip it just pressed back in.
+  const a = document.activeElement;
+  const refocus = row.contains(a) ? (a.id === "effReset" ? cur : a.dataset.effort) : null;
   const note =
     cur === rec
       ? `<span class="eff-note">Recommended</span>`
@@ -507,6 +518,10 @@ function renderEfforts(key) {
       chosenEffort = null;
       renderEfforts(key);
     });
+  if (refocus) {
+    const again = row.querySelector(`.eff-chip[data-effort="${refocus}"]`);
+    if (again) again.focus();
+  }
 }
 
 // ---------- Launch ----------

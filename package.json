@@ -8,7 +8,9 @@
     "route:test": "node src/cli.js --selftest",
     "projects": "node src/projects-cli.js",
     "usage": "node src/usage-cli.js",
-    "start": "electron ."
+    "start": "electron .",
+    "rebuild": "electron-rebuild -f -w node-pty",
+    "postinstall": "electron-rebuild -f -w node-pty"
   },
   "keywords": [],
   "author": "Steven Design Services LLC",
@@ -23,5 +25,8 @@
     "@xterm/xterm": "^6.0.0",
     "node-pty": "^1.1.0"
   },
-  "private": true
+  "private": true,
+  "engines": {
+    "node": ">=18"
+  }
 }
