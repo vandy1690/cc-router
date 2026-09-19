@@ -47,7 +47,10 @@ generation is a one-file change.
 - **Embedded Claude Code.** Real, interactive `claude` sessions inside the app
   (node-pty and xterm), with **tabs** for concurrent sessions, **desktop
   notifications** when a background session finishes or waits on you, and keyboard
-  shortcuts (⌘T new, ⌘1–9 switch, ⌘Enter launch).
+  shortcuts (⌘T new, ⌘1–9 switch, ⌘Enter launch). Sessions start clean even when
+  the app itself was opened from inside another Claude Code session: the parent's
+  session markers are stripped (see `src/env.js`), so every chat saves its transcript
+  and shows up in recall.
 - **Live usage meter, fully automatic.** Reads your real plan usage from Anthropic
   with the Claude Code login already in your Keychain: the 5-hour session, the week,
   and the weekly Fable limit, each with its true reset time, plus how the week splits
@@ -85,6 +88,8 @@ live usage meter and real chat history.
 ![The app in use, waiting for a prompt](docs/06-real-compose.png)
 
 ![The app in use: a short prompt routed to Haiku 4.5 at low effort](docs/07-real-routed.png)
+
+![The app in use: a live Claude Code session on Sonnet 5 at medium effort, in its own tab](docs/09-real-session.png)
 
 ## The plugin
 

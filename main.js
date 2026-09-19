@@ -14,6 +14,7 @@ const { catalogForRenderer, cmpVersion, EFFORTS, MIN_CLI } = require("./src/mode
 const { allProjects } = require("./src/sessions");
 const { computeUsage, saveSync, applyLive, fromLive } = require("./src/usage");
 const { getLiveUsage } = require("./src/live-usage");
+const { sessionEnv } = require("./src/env");
 
 let win = null;
 
@@ -252,7 +253,7 @@ function ptyStart(opts) {
       cols: opts.cols || 80,
       rows: opts.rows || 24,
       cwd: dir,
-      env: process.env,
+      env: sessionEnv(), // no parent-session markers: see src/env.js
     });
   } catch (e) {
     return { ok: false, error: e.message };

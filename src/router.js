@@ -10,6 +10,7 @@
 
 const { execFile } = require("child_process");
 const { MODELS, ORDER, CLASSIFIER_MODEL } = require("./models");
+const { sessionEnv } = require("./env");
 
 // --- Signals -----------------------------------------------------------------
 //
@@ -210,7 +211,7 @@ function runClassifier(prompt, { slim, timeoutMs, signal }) {
     : ["-p", "--model", CLASSIFIER_MODEL, "--output-format", "json", `${system}\n\n${user}`];
   return new Promise((resolve) => {
     // signal lets the caller kill a call the user has already typed past.
-    execFile("claude", args, { timeout: timeoutMs, maxBuffer: 1024 * 1024, signal }, (err, stdout) =>
+    execFile("claude", args, { timeout: timeoutMs, maxBuffer: 1024 * 1024, signal, env: sessionEnv() }, (err, stdout) =>
       resolve({ err, stdout })
     );
   });
