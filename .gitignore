@@ -1,9 +1,12 @@
 # Dependencies (large; node-pty is a native build, rebuild locally)
 node_modules/
 
-# Build output
+# Build output. build/ holds packaging output too, but the Dock icon lives
+# there and is source art, so those two files are tracked.
 dist/
-build/
+build/*
+!build/icon.png
+!build/icon.icns
 out/
 
 # OS / editor
