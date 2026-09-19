@@ -125,7 +125,8 @@ app.whenReady().then(() => {
   // Run unpackaged, the Dock would show Electron's icon. build/icon.png is the
   // CC mark (Nickel Gothic, ink #2D3436 on paper #F0EEE9, the light theme);
   // build/icon.icns is the same art for a packaged build.
-  if (process.platform === "darwin" && app.dock) app.dock.setIcon(path.join(__dirname, "build", "icon.png"));
+  const icon = path.join(__dirname, "build", "icon.png");
+  if (process.platform === "darwin" && app.dock && fs.existsSync(icon)) app.dock.setIcon(icon);
   // Register first, so the window can show the key that worked.
   hotkey = registerHotkey();
   if (!hotkey) console.warn("Could not register a global summon hotkey.");
