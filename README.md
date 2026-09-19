@@ -79,7 +79,12 @@ generation is a one-file change.
 
 ![The version recommendation and the routing card, both out from under the input box](docs/05-version-drawer.png)
 
-Screenshots use demo data.
+The screenshots above use demo data. The two below are the app in real use, with a
+live usage meter and real chat history.
+
+![The app in use, waiting for a prompt](docs/06-real-compose.png)
+
+![The app in use: a short prompt routed to Haiku 4.5 at low effort](docs/07-real-routed.png)
 
 ## The plugin
 
