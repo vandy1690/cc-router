@@ -1,9 +1,21 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="light">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <!-- Local files only, plus the one remote origin the display face needs
+         (Adobe Typekit). Scripts are never inline and never remote. -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline' https://use.typekit.net https://p.typekit.net; font-src 'self' https://use.typekit.net; img-src 'self' data: https://p.typekit.net; connect-src 'none'; base-uri 'none'; form-action 'none'"
+    />
     <title>Claude Code Router</title>
+    <script src="theme-boot.js"></script>
+    <!-- Body: Inter, bundled, so it never depends on what is installed on the Mac. -->
+    <link rel="stylesheet" href="../node_modules/@fontsource-variable/inter/index.css" />
+    <!-- Display: Nickel Gothic Variable, the same Typekit kit stevendesignco.com
+         uses. Offline, the token stack falls back to Inter. -->
+    <link rel="stylesheet" href="https://use.typekit.net/uic8bwd.css" />
     <link rel="stylesheet" href="../node_modules/@xterm/xterm/css/xterm.css" />
     <link rel="stylesheet" href="styles.css" />
   </head>
@@ -18,34 +30,40 @@
             <path d="M82.6335 137.326V0H145.898C148.277 0 150.195 0.895047 151.649 2.68514C153.235 4.47523 154.029 6.64892 154.029 9.20619V128.12C154.029 130.677 153.235 132.851 151.649 134.641C150.195 136.431 148.277 137.326 145.898 137.326H82.6335ZM115.555 117.187H119.521C119.785 117.187 120.05 117.123 120.314 116.995C120.579 116.868 120.777 116.74 120.909 116.612C121.174 116.356 121.372 116.1 121.504 115.845C121.636 115.589 121.703 115.269 121.703 114.886V22.2483C121.703 21.8647 121.57 21.5451 121.306 21.2893C121.174 20.9057 120.909 20.65 120.513 20.5221C120.248 20.2664 119.852 20.1386 119.323 20.1386H115.555V117.187Z" />
             <path d="M8.13113 137.326C5.75129 137.326 3.76809 136.431 2.18152 134.641C0.727174 132.851 0 130.677 0 128.12V89.5686L32.3262 89.9522V115.461C32.3262 116.74 32.5245 117.635 32.9212 118.146C33.45 118.658 34.3094 118.913 35.4993 118.913C36.557 118.913 37.2842 118.658 37.6809 118.146C38.2097 117.635 38.4741 116.74 38.4741 115.461V89.9522C38.4741 88.5457 38.1436 87.5867 37.4825 87.0753C36.8215 86.436 35.6977 85.7327 34.1111 84.9655L10.1143 74.0332C7.60228 72.8824 5.28854 71.412 3.17312 69.6219C1.05771 67.8318 0 65.1466 0 61.5664V9.20619C0 6.64892 0.727174 4.47523 2.18152 2.68514C3.76809 0.895047 5.75129 0 8.13113 0H62.6692C65.0491 0 66.9662 0.895047 68.4205 2.68514C70.0071 4.47523 70.8004 6.64892 70.8004 9.20619V47.7571H38.4741V21.6729C38.4741 20.5221 38.2097 19.691 37.6809 19.1796C37.2842 18.6681 36.557 18.4124 35.4993 18.4124C34.4416 18.4124 33.6483 18.6681 33.1195 19.1796C32.5906 19.691 32.3262 20.5221 32.3262 21.6729V47.1818C32.3262 48.5883 32.5906 49.5472 33.1195 50.0587C33.7806 50.5701 34.9044 51.2095 36.4909 51.9767L60.8843 63.2926C63.6608 64.5712 65.9746 66.0417 67.8256 67.7039C69.8088 69.3661 70.8004 71.9234 70.8004 75.3757V128.12C70.8004 130.677 70.0071 132.851 68.4205 134.641C66.9662 136.431 65.0491 137.326 62.6692 137.326H8.13113Z" />
           </svg>
-          <h1 class="brand-title">Claude Code Router</h1>
+          <h1 class="brand-title display">Claude Code Router</h1>
         </div>
-        <div class="hint">Press <kbd>F19</kbd> anywhere to summon</div>
+        <div class="head-right">
+          <div class="hint" id="hotkeyHint" title="On a Mac keyboard, hold fn while pressing it, unless the function keys are set as standard keys." hidden>Press <kbd id="hotkeyKey"></kbd> anywhere to summon</div>
+          <button class="theme-toggle" id="themeToggle" type="button" aria-label="Switch to dark theme" title="Switch theme">
+            <svg class="theme-toggle__moon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" /></svg>
+            <svg class="theme-toggle__sun" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" /></svg>
+          </button>
+        </div>
       </header>
 
       <div class="grid">
         <!-- Left: Recent Chats (top), Usage (below) -->
         <aside class="col-left">
-          <section class="projects">
-            <div class="projects-head">
-              <div class="projects-title">Recent Chats</div>
-              <input class="chat-search" id="chatSearch" type="text" placeholder="Search…" spellcheck="false" />
+          <section class="panel projects" aria-labelledby="projectsTitle">
+            <div class="panel-head">
+              <h2 class="eyebrow" id="projectsTitle">Recent chats</h2>
+              <input class="chat-search" id="chatSearch" type="search" placeholder="Search…" aria-label="Search chats" spellcheck="false" />
             </div>
             <div id="projects" class="projects-list">
               <div class="loading">Loading projects…</div>
             </div>
           </section>
 
-          <section class="meters" id="meters">
-            <div class="meters-head">
-              <div class="meters-title">Usage <span class="usage-status" id="usageStatus"></span></div>
-              <button class="sync-btn" id="syncBtn">Sync from panel</button>
+          <section class="panel meters" id="meters" aria-labelledby="metersTitle">
+            <div class="panel-head">
+              <h2 class="eyebrow" id="metersTitle">Usage <span class="usage-status" id="usageStatus"></span></h2>
+              <button class="btn btn--sm" id="syncBtn" type="button">Sync from panel</button>
             </div>
 
             <!-- Shown when auto usage is off because Keychain access wasn't granted -->
-            <div class="keychain-help" id="keychainHelp" hidden>
-              <div class="kh-title">Turn on automatic usage tracking</div>
-              <div class="kh-body">
+            <div class="notice" id="keychainHelp" hidden>
+              <div class="notice-title">Turn on automatic usage tracking</div>
+              <div class="notice-body">
                 This reads your live usage straight from Anthropic. It needs one-time
                 permission to read your Claude Code login from the macOS Keychain.
                 <ol>
@@ -53,20 +71,20 @@
                   <li>macOS will pop up: <i>"cc-router wants to use your confidential
                     information stored in 'Claude Code-credentials' in your keychain."</i></li>
                   <li>If it asks, type your <b>Mac login password</b>.</li>
-                  <li>Click <b>Always Allow</b> — not just Allow — so it never asks again.</li>
+                  <li>Click <b>Always Allow</b>, not just Allow, so it never asks again.</li>
                 </ol>
-                Clicked <b>Deny</b> by mistake? Just press <b>Turn on auto usage</b> again;
+                Clicked <b>Deny</b> by mistake? Press <b>Turn on auto usage</b> again and
                 macOS will ask once more. Your token stays on this Mac and is never logged.
               </div>
-              <div class="kh-actions">
-                <button class="btn-ghost" id="khDismiss">Not now</button>
-                <button class="btn-solid" id="khEnable">Turn on auto usage</button>
+              <div class="notice-actions">
+                <button class="btn btn--sm" id="khDismiss" type="button">Not now</button>
+                <button class="btn btn--sm btn--primary" id="khEnable" type="button">Turn on auto usage</button>
               </div>
             </div>
 
             <div class="sync-form" id="syncForm" hidden>
               <div class="sync-note">
-<b>How to sync</b>
+                <b>How to sync</b>
                 <ol>
                   <li>In the Claude desktop app, open <b>Settings → Usage</b>.</li>
                   <li>Read the % for Current session, Weekly all models, and Fable.</li>
@@ -80,15 +98,15 @@
                 <label>Session <input type="number" id="sync-session" min="0" max="200" /> %</label>
                 <label class="reset-field">
                   <span>Session resets in</span>
-                  <span class="reset-pair"><input type="number" id="sync-reset-h" min="0" max="12" placeholder="0" /> h</span>
-                  <span class="reset-pair"><input type="number" id="sync-reset-m" min="0" max="59" placeholder="0" /> m</span>
+                  <span class="reset-pair"><input type="number" id="sync-reset-h" min="0" max="12" placeholder="0" aria-label="Hours until the session resets" /> h</span>
+                  <span class="reset-pair"><input type="number" id="sync-reset-m" min="0" max="59" placeholder="0" aria-label="Minutes until the session resets" /> m</span>
                 </label>
                 <label>Weekly all <input type="number" id="sync-weeklyAll" min="0" max="200" /> %</label>
                 <label>Weekly Fable <input type="number" id="sync-weeklyFable" min="0" max="200" /> %</label>
               </div>
               <div class="sync-actions">
-                <button class="btn-ghost" id="syncCancel">Cancel</button>
-                <button class="btn-solid" id="syncSave">Save sync</button>
+                <button class="btn btn--sm" id="syncCancel" type="button">Cancel</button>
+                <button class="btn btn--sm btn--primary" id="syncSave" type="button">Save sync</button>
               </div>
             </div>
 
@@ -100,73 +118,111 @@
 
         <!-- Right: the chat / composer -->
         <section class="col-right">
-        <!-- Session tabs (shown when at least one session is open) -->
-        <div class="term-tabs" id="termTabs" hidden></div>
+          <!-- Session tabs (shown when at least one session is open) -->
+          <div class="term-tabs" id="termTabs" hidden></div>
 
-        <div class="chatpane" id="composeView">
-          <div class="welcome">
-            <h2 class="welcome-title">What are we building?</h2>
-            <p class="welcome-sub">
-              Describe the task — I'll pick the right model, then open Claude Code on it.
-            </p>
-          </div>
+          <div class="chatpane" id="composeView">
+            <div class="welcome">
+              <h2 class="welcome-title display">What are we building?</h2>
+              <p class="welcome-sub">
+                Describe the task. I will pick the right model, then open Claude Code on it.
+              </p>
+            </div>
 
-          <div class="composer-card" id="composerCard">
-            <textarea
-              id="prompt"
-              class="prompt"
-              placeholder="Ask me anything…"
-              spellcheck="false"
-            ></textarea>
+            <div class="composer-wrap">
+            <div class="composer-card" id="composerCard">
+              <textarea
+                id="prompt"
+                class="prompt"
+                placeholder="Ask me anything…"
+                aria-label="Describe the task"
+                spellcheck="false"
+              ></textarea>
 
-            <div class="composer-bar">
-              <label class="runin">
-                Run in
-                <select id="runin"></select>
-              </label>
-              <button id="launch" class="send" disabled aria-label="Launch Claude Code" title="Launch">
-                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M12 19V5M5 12l7-7 7 7" />
-                </svg>
-              </button>
+              <div class="composer-bar">
+                <label class="runin">
+                  Run in
+                  <select id="runin"></select>
+                </label>
+                <div class="bar-right">
+                  <!-- Return adds a line, so the shortcut that launches has to be visible. -->
+                  <span class="launch-hint" aria-hidden="true"><kbd>⌘</kbd> <kbd>Return</kbd> to launch</span>
+                  <button id="launch" class="send" type="button" disabled aria-label="Launch Claude Code" aria-keyshortcuts="Meta+Enter" title="Launch (⌘ Return)">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      <path d="M12 19V5M5 12l7-7 7 7" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- The version recommendation. It slides out from under the input box
+                 when the installed Claude Code is older than a model needs. -->
+            <div class="drawer" id="cliNotice" role="status" aria-hidden="true" inert>
+              <div class="drawer-clip">
+                <div class="drawer-body">
+                  <div class="notice-title" id="cliNoticeTitle"></div>
+                  <div class="notice-body" id="cliNoticeBody"></div>
+                  <div class="notice-actions">
+                    <button class="btn btn--sm" id="cliDismiss" type="button">Not now</button>
+                    <button class="btn btn--sm btn--primary" id="cliRecheck" type="button">Check again</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Routing status: "ok" when the router chose, "ask" when it's your call.
+                 The title says which in words; the dot's colour only repeats it.
+                 It slides out from under the prompt card once there is a decision. -->
+            <div class="tb-reveal" id="thinkReveal" aria-hidden="true" inert>
+              <div class="tb-clip">
+                <div class="think-block" id="thinkBlock" role="status" aria-live="polite">
+                  <div class="think-head">
+                    <span class="think-dot" aria-hidden="true"></span>
+                    <span class="think-title" id="thinkTitle"></span>
+                    <span class="think-meta" id="thinkMeta"></span>
+                  </div>
+                  <div class="think-body" id="thinkBody"></div>
+                  <div class="alts" id="alts"></div>
+                  <div class="alts efforts" id="efforts" role="group" aria-label="Effort"></div>
+                </div>
+              </div>
+            </div>
+            </div>
+
+
+            <!-- Prompt starters. Each one writes the opening words into the box above
+                 and leaves the cursor at the end. Nothing launches. -->
+            <div class="chips" id="chips" role="group" aria-label="Prompt starters">
+              <span class="chips-label">Start with</span>
+              <button class="chip" type="button" data-p="Fix the bug where " title="Writes “Fix the bug where” into the box. You finish the sentence.">Fix a bug</button>
+              <button class="chip" type="button" data-p="Refactor this across the whole repo: " title="Writes “Refactor this across the whole repo:” into the box. Whole-repo wording routes to the top tier.">Repo-wide refactor</button>
+              <button class="chip" type="button" data-p="Explain how this works: " title="Writes “Explain how this works:” into the box. You name the code.">Explain code</button>
+              <button class="chip" type="button" data-p="Add tests for " title="Writes “Add tests for” into the box. You name what to test.">Add tests</button>
             </div>
           </div>
 
-          <!-- Routing status as a thinking-block: green when the router chose, yellow when it's your call -->
-          <div class="think-block" id="thinkBlock" hidden>
-            <div class="think-head">
-              <span class="think-dot"></span>
-              <span class="think-title" id="thinkTitle"></span>
-              <span class="think-meta" id="thinkMeta"></span>
-            </div>
-            <div class="think-body" id="thinkBody"></div>
-            <div class="alts" id="alts"></div>
+          <!-- Embedded Claude Code sessions (one xterm mount per tab) -->
+          <div class="termpane" id="termView" hidden>
+            <div class="term-body" id="termBody"></div>
           </div>
-
-          <div class="chips" id="chips">
-            <button class="chip" data-p="Fix the bug where ">Fix a bug</button>
-            <button class="chip" data-p="Refactor this across the whole repo: ">Repo-wide refactor</button>
-            <button class="chip" data-p="Explain how this works: ">Explain code</button>
-            <button class="chip" data-p="Add tests for ">Add tests</button>
-          </div>
-        </div>
-
-        <!-- Embedded Claude Code sessions (one xterm mount per tab) -->
-        <div class="termpane" id="termView" hidden>
-          <div class="term-body" id="termBody"></div>
-        </div>
         </section>
       </div>
+
+      <footer class="colophon">
+        <span>Created by Steven Design Services LLC</span>
+        <span>© 2026 Steven Design Services LLC. All rights reserved.</span>
+      </footer>
     </div>
 
-    <!-- Over-limit confirm -->
+    <!-- Confirm before launching: over a usage limit, or on a CLI too old for the model -->
     <div class="modal-backdrop" id="modal" hidden>
-      <div class="modal">
-        <div class="modal-title" id="modalTitle">Over your usage limit</div>
+      <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle" aria-describedby="modalBody">
+        <h3 class="modal-title" id="modalTitle">Over your usage limit</h3>
         <div class="modal-body" id="modalBody"></div>
         <div class="modal-actions">
-          <button class="btn-ghost" id="modalCancel">Cancel</button>
-          <button class="btn-solid" id="modalGo">Launch anyway</button>
+          <button class="btn btn--sm" id="modalCancel" type="button">Cancel</button>
+          <button class="btn btn--sm btn--primary" id="modalGo" type="button">Launch anyway</button>
         </div>
       </div>
     </div>

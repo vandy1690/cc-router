@@ -11,7 +11,7 @@ const os = require("os");
 const path = require("path");
 const readline = require("readline");
 const { listProjects } = require("./sessions");
-const { byId, MODELS } = require("./models");
+const { priceFor, isFable } = require("./models");
 
 // Manual-sync anchors persist here. Each anchor pins a bucket to the official %
 // you read off the desktop Usage panel, plus the local Claude Code spend at that
@@ -42,6 +42,11 @@ function writeSync(obj) {
 // Claude Code spend the official panel read 23% weekly all-models, so ceiling
 // ≈ $117. Note: these measure CLAUDE CODE usage only — Fable spent in the
 // Claude apps (Cowork/Chat) is invisible here, so weeklyFable will read low.
+//
+// 2026-09: spend is now counted once per message (it was ~2.2x high) and now
+// includes Opus 5 / Fable 5.1 sessions (they priced at $0 before). Both change
+// the scale, so treat the numbers below as placeholders until you re-sync from
+// the panel. With live usage on, only the Fable bucket depends on them.
 const CEILINGS = {
   session5h: 200, // rolling 5-hour session bucket (approximate — see note above)
   weeklyAll: 117, // weekly all-models bucket (calibrated)
@@ -52,15 +57,20 @@ const HOUR = 3600 * 1000;
 const DAY = 24 * HOUR;
 
 // Weighted cost of one assistant message, in USD. Cache reads are ~0.1x input
-// price; cache writes ~1.25x. Matches how spend actually accrues.
+// price (0.025x on Fable 5.1); cache writes ~1.25x. Matches how spend accrues.
+//
+// priceFor() knows current models, the previous generation, and falls back by
+// family for anything newer, so a transcript never prices at $0 just because
+// the catalog moved on. (It used to: Opus 5 and Fable 5.1 sessions counted for
+// nothing while the catalog still listed Opus 4.8 and Fable 5.)
 function messageCost(model, usage) {
-  const m = byId(model);
+  const m = priceFor(model);
   if (!m || !usage) return 0;
   const input = usage.input_tokens || 0;
   const cacheRead = usage.cache_read_input_tokens || 0;
   const cacheWrite = usage.cache_creation_input_tokens || 0;
   const output = usage.output_tokens || 0;
-  const weightedInput = input + cacheRead * 0.1 + cacheWrite * 1.25;
+  const weightedInput = input + cacheRead * m.cacheReadMult + cacheWrite * 1.25;
   return (weightedInput * m.priceIn + output * m.priceOut) / 1_000_000;
 }
 
@@ -83,6 +93,12 @@ async function computeLocal(now = Date.now()) {
   const scanFrom = Math.min(weekStart, sessionStart);
 
   const buckets = { session5h: 0, weeklyAll: 0, weeklyFable: 0 };
+  // message id -> { ts, model, cost }. Claude Code writes one transcript line
+  // per content block (thinking, text, each tool call), and every line repeats
+  // the whole message's usage. Summing lines counted each message about 2.2x.
+  // Resumed sessions also copy history into a new file, so this is keyed across
+  // files, not per file.
+  const seen = new Map();
 
   for (const projectDir of listProjects()) {
     let files;
@@ -101,8 +117,17 @@ async function computeLocal(now = Date.now()) {
         continue;
       }
       if (mtime < scanFrom) continue;
-      await accumulateFile(full, now, weekStart, sessionStart, buckets);
+      await accumulateFile(full, weekStart, sessionStart, seen);
     }
+  }
+
+  for (const { ts, model, cost } of seen.values()) {
+    if (ts >= weekStart) {
+      buckets.weeklyAll += cost;
+      // Any Fable-tier model: 5 and 5.1 draw from the same weekly pool.
+      if (isFable(model)) buckets.weeklyFable += cost;
+    }
+    if (ts >= sessionStart) buckets.session5h += cost;
   }
 
   return { buckets, weekStart, sessionStart };
@@ -176,7 +201,9 @@ function bucketMeter(localSpent, ceiling, computedResetAt, anchor, windowStart, 
   return m;
 }
 
-function accumulateFile(file, now, weekStart, sessionStart, buckets) {
+let anon = 0; // key for the rare assistant line with no message id
+
+function accumulateFile(file, weekStart, sessionStart, seen) {
   return new Promise((resolve) => {
     const rl = readline.createInterface({ input: fs.createReadStream(file) });
     rl.on("line", (line) => {
@@ -191,11 +218,10 @@ function accumulateFile(file, now, weekStart, sessionStart, buckets) {
       if (Number.isNaN(ts) || ts < sessionStart && ts < weekStart) return;
       const cost = messageCost(o.message.model, o.message.usage);
       if (cost <= 0) return;
-      if (ts >= weekStart) {
-        buckets.weeklyAll += cost;
-        if (o.message.model === MODELS.fable.id) buckets.weeklyFable += cost;
-      }
-      if (ts >= sessionStart) buckets.session5h += cost;
+      const id = o.message.id || "anon-" + ++anon;
+      const prev = seen.get(id);
+      // Later lines of one message can carry a larger output count; keep the max.
+      if (!prev || cost > prev.cost) seen.set(id, { ts, model: o.message.model, cost });
     });
     rl.on("close", resolve);
     rl.on("error", resolve);
@@ -209,16 +235,17 @@ function meter(spent, ceiling, resetAt) {
     ceiling,
     pct: Math.round(pct),
     over: spent > ceiling,
-    color: colorFor(pct), // green -> amber -> red as it fills
+    color: colorFor(pct), // ok -> warn -> over as it fills
     resetAt: new Date(resetAt).toISOString(),
   };
 }
 
-// Green below 60%, amber 60-85%, red above — matches the requested cue.
+// Severity, not a colour: the stylesheet decides what each state looks like.
+// Normal below 60%, warn 60-85%, over above.
 function colorFor(pct) {
-  if (pct >= 85) return "red";
-  if (pct >= 60) return "amber";
-  return "green";
+  if (pct >= 85) return "over";
+  if (pct >= 60) return "warn";
+  return "ok";
 }
 
 // Build a meter from authoritative live numbers (no $ — % + real reset only).
@@ -238,8 +265,8 @@ function liveMeter(livePct, resetAtMs) {
   };
 }
 
-// Overlay live session + weekly-all-models numbers onto the proxy/manual meters.
-// Fable has no live header, so it stays on the proxy/manual path.
+// Overlay live numbers onto the local estimate. With the usage endpoint all
+// three buckets are live; on the header fallback Fable stays on the estimate.
 function applyLive(base, live) {
   if (!live || !live.ok) {
     base.liveError = live ? live.reason : "unknown";
@@ -247,8 +274,23 @@ function applyLive(base, live) {
   }
   if (live.session) base.session = liveMeter(live.session.pct, live.session.resetAt);
   if (live.weekly) base.weeklyAll = liveMeter(live.weekly.pct, live.weekly.resetAt);
+  if (live.fable) {
+    base.weeklyFable = liveMeter(live.fable.pct, live.fable.resetAt);
+    base.fableLabel = live.fable.label || "Fable";
+  }
+  base.breakdown = live.breakdown || [];
+  base.liveSource = live.source || null;
   base.live = true;
+  // True when nothing on screen is an estimate, so the manual sync has no job.
+  base.allLive = !!(live.session && live.weekly && live.fable);
   return base;
+}
+
+// When every bucket is live there is no reason to read a week of transcripts
+// just to throw the result away. Build the snapshot from the live data alone.
+function fromLive(live, now = Date.now()) {
+  if (!live || !live.ok || !(live.session && live.weekly && live.fable)) return null;
+  return applyLive({ now }, live);
 }
 
 function round(n) {
@@ -266,6 +308,7 @@ module.exports = {
   computeUsage,
   saveSync,
   applyLive,
+  fromLive,
   CEILINGS,
   messageCost,
   lastWeeklyReset,

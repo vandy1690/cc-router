@@ -1,14 +1,16 @@
 {
   "name": "cc-router",
-  "version": "1.0.0",
-  "description": "Menubar app: routes a prompt to the right Claude model and recalls past Claude Code chats per project.",
+  "version": "1.1.0",
+  "description": "Claude Code Router: routes a prompt to the right Claude model. A macOS desktop app that runs Claude Code sessions with live plan usage and session recall, plus a Claude Code plugin that shares the same routing rules.",
   "main": "main.js",
   "scripts": {
     "route": "node src/cli.js",
     "route:test": "node src/cli.js --selftest",
     "projects": "node src/projects-cli.js",
     "usage": "node src/usage-cli.js",
-    "start": "electron ."
+    "start": "electron .",
+    "rebuild": "electron-rebuild -f -w node-pty",
+    "postinstall": "electron-rebuild -f -w node-pty"
   },
   "keywords": [],
   "author": "Steven Design Services LLC",
@@ -18,9 +20,13 @@
     "electron": "^43.0.0"
   },
   "dependencies": {
+    "@fontsource-variable/inter": "^5.3.0",
     "@xterm/addon-fit": "^0.11.0",
     "@xterm/xterm": "^6.0.0",
     "node-pty": "^1.1.0"
   },
-  "private": true
+  "private": true,
+  "engines": {
+    "node": ">=18"
+  }
 }

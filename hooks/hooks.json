@@ -1,0 +1,25 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          { "type": "command", "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/track-model.js\" \"${CLAUDE_PLUGIN_DATA}\"", "timeout": 5 }
+        ]
+      }
+    ],
+    "PostModelSwitch": [
+      {
+        "hooks": [
+          { "type": "command", "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/track-model.js\" \"${CLAUDE_PLUGIN_DATA}\"", "timeout": 5 }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          { "type": "command", "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/nudge.js\" \"${CLAUDE_PLUGIN_DATA}\"", "timeout": 5 }
+        ]
+      }
+    ]
+  }
+}
