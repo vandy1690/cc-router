@@ -9,6 +9,7 @@
 // hook requires it directly, so the desktop app and the plugin always agree.
 
 const { execFile } = require("child_process");
+const os = require("os");
 const { MODELS, ORDER, CLASSIFIER_MODEL } = require("./models");
 const { sessionEnv } = require("./env");
 
@@ -211,7 +212,9 @@ function runClassifier(prompt, { slim, timeoutMs, signal }) {
     : ["-p", "--model", CLASSIFIER_MODEL, "--output-format", "json", `${system}\n\n${user}`];
   return new Promise((resolve) => {
     // signal lets the caller kill a call the user has already typed past.
-    execFile("claude", args, { timeout: timeoutMs, maxBuffer: 1024 * 1024, signal, env: sessionEnv() }, (err, stdout) =>
+    // cwd is pinned: an app opened from the Dock starts in "/", and the
+    // classifier should behave the same however the app was launched.
+    execFile("claude", args, { timeout: timeoutMs, maxBuffer: 1024 * 1024, signal, env: sessionEnv(), cwd: os.homedir() }, (err, stdout) =>
       resolve({ err, stdout })
     );
   });

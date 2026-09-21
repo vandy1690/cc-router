@@ -27,6 +27,17 @@ const MESSAGES_URL = "https://api.anthropic.com/v1/messages";
 
 let cache = { at: 0, data: null };
 
+// The usage endpoint rate-limits. When it does, backing off matters twice
+// over: hammering it keeps it shut, and the fallback path POSTs a real request,
+// so retrying in a tight loop would spend tokens to ask how many tokens are
+// left. Nothing is tried again before this time.
+let backoffUntil = 0;
+const DEFAULT_BACKOFF_MS = 5 * 60 * 1000;
+
+// How long a good answer stays worth showing after a failure. A blip should
+// not blank the meters; a number a few minutes old is far better than none.
+const STALE_OK_MS = 20 * 60 * 1000;
+
 function getToken() {
   return new Promise((resolve) => {
     execFile(
@@ -103,6 +114,11 @@ async function fetchUsageEndpoint(token) {
   } catch (_) {
     return { ok: false, reason: "network" };
   }
+  if (resp.status === 429) {
+    const after = Number(resp.headers.get("retry-after"));
+    backoffUntil = Date.now() + (Number.isFinite(after) && after > 0 ? after * 1000 : DEFAULT_BACKOFF_MS);
+    return { ok: false, reason: "rate_limited", retryAt: backoffUntil };
+  }
   if (resp.status !== 200) return { ok: false, reason: "http_" + resp.status };
   try {
     return parseUsage(await resp.json());
@@ -149,13 +165,20 @@ async function fetchHeaders(token) {
   };
 }
 
-async function fetchLive() {
+async function fetchLive(now = Date.now()) {
   const token = await getToken();
   if (!token) return { ok: false, reason: "no_token" };
+
+  // Still inside a backoff window: do not touch the endpoint at all.
+  if (now < backoffUntil) {
+    return { ok: false, reason: "rate_limited", retryAt: backoffUntil };
+  }
+
   const usage = await fetchUsageEndpoint(token);
   if (usage.ok) return usage;
-  // An expired login fails both the same way; do not spend a token finding out.
-  if (usage.reason === "http_401" || usage.reason === "network") return usage;
+  // These three fail the same way on the fallback path, so asking again would
+  // only cost a token: an expired login, no network, or a shut door.
+  if (usage.reason === "http_401" || usage.reason === "network" || usage.reason === "rate_limited") return usage;
   const headers = await fetchHeaders(token);
   return headers.ok ? headers : usage;
 }
@@ -164,9 +187,26 @@ async function fetchLive() {
 // short; the cache mostly keeps several UI refreshes from stacking up requests.
 async function getLiveUsage(maxAgeMs = 45000, now = Date.now()) {
   if (cache.data && cache.data.ok && now - cache.at < maxAgeMs) return cache.data;
-  const data = await fetchLive();
-  if (data.ok) cache = { at: now, data };
+  const data = await fetchLive(now);
+  if (data.ok) {
+    cache = { at: now, data };
+    return data;
+  }
+  // A recent good answer beats no answer. Say how old it is and why it is not
+  // being refreshed, rather than dropping the meters to a local estimate.
+  if (cache.data && cache.data.ok && now - cache.at < STALE_OK_MS) {
+    return { ...cache.data, stale: true, staleMs: now - cache.at, staleReason: data.reason, retryAt: data.retryAt || null };
+  }
   return data;
 }
 
-module.exports = { getLiveUsage, parseUsage };
+// What the endpoint is doing right now, for the diagnostics panel.
+function usageState(now = Date.now()) {
+  return {
+    backingOff: now < backoffUntil,
+    retryAt: backoffUntil || null,
+    cachedAgeMs: cache.data && cache.data.ok ? now - cache.at : null,
+  };
+}
+
+module.exports = { getLiveUsage, parseUsage, usageState };

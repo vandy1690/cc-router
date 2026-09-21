@@ -42,8 +42,11 @@
       </header>
 
       <div class="grid">
-        <!-- Left: Recent Chats (top), Usage (below) -->
+        <!-- Left rail: Recent chats (what you worked on), Projects (where you
+             work), Usage (what it is costing) -->
         <aside class="col-left">
+          <!-- These two scroll; Usage below stays put. -->
+          <div class="rail-scroll">
           <section class="panel projects" aria-labelledby="projectsTitle">
             <div class="panel-head">
               <h2 class="eyebrow" id="projectsTitle">Recent chats</h2>
@@ -53,6 +56,22 @@
               <div class="loading">Loading projects…</div>
             </div>
           </section>
+
+          <section class="panel folders" aria-labelledby="foldersTitle">
+            <div class="panel-head">
+              <h2 class="eyebrow" id="foldersTitle">Projects</h2>
+              <input class="chat-search" id="folderSearch" type="search" placeholder="Search…" aria-label="Search projects" aria-describedby="folderSearchHelp" spellcheck="false" />
+            </div>
+            <p class="sr-only" id="folderSearchHelp">Type to filter your projects. Press Return to work in the first match.</p>
+            <div class="folder-list" id="folderList" aria-labelledby="foldersTitle">
+              <div class="loading">Loading projects…</div>
+            </div>
+            <div class="panel-foot">
+              <button class="btn btn--sm" id="folderAdd" type="button" title="Pick a folder to work in, even one Claude Code has never opened">Add folder…</button>
+            </div>
+          </section>
+
+          </div>
 
           <section class="panel meters" id="meters" aria-labelledby="metersTitle">
             <div class="panel-head">
@@ -110,6 +129,8 @@
               </div>
             </div>
 
+            <div class="diag-line" id="diagLine" hidden></div>
+
             <div class="meter-row" id="meter-session"></div>
             <div class="meter-row" id="meter-weekly"></div>
             <div class="meter-row" id="meter-fable"></div>
@@ -140,10 +161,9 @@
               ></textarea>
 
               <div class="composer-bar">
-                <label class="runin">
-                  Run in
-                  <select id="runin"></select>
-                </label>
+                <!-- Not a control. Projects in the rail chooses the folder; this
+                     says which one you are about to launch into. -->
+                <p class="runin">Runs in <b id="runinName">Home (~)</b></p>
                 <div class="bar-right">
                   <!-- Return adds a line, so the shortcut that launches has to be visible. -->
                   <span class="launch-hint" aria-hidden="true"><kbd>⌘</kbd> <kbd>Return</kbd> to launch</span>
@@ -210,7 +230,7 @@
       </div>
 
       <footer class="colophon">
-        <span>Created by Steven Design Services LLC</span>
+        <span>Created by <a class="colophon-link" href="https://www.stevendesignco.com/" id="sdcLink">Steven Design Services LLC</a></span>
         <span>© 2026 Steven Design Services LLC. All rights reserved.</span>
       </footer>
     </div>
@@ -223,6 +243,65 @@
         <div class="modal-actions">
           <button class="btn btn--sm" id="modalCancel" type="button">Cancel</button>
           <button class="btn btn--sm btn--primary" id="modalGo" type="button">Launch anyway</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Settings. Opens from the menu bar: Claude Code Router, Settings, or ⌘, -->
+    <div class="modal-backdrop" id="settings" hidden>
+      <div class="modal modal--wide" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+        <h3 class="modal-title" id="settingsTitle">Settings</h3>
+
+        <div class="set-rows">
+          <div class="set-row">
+            <label class="set-label" for="setFolder">New sessions run in</label>
+            <div class="set-control">
+              <select id="setFolder"></select>
+              <button class="btn btn--sm" id="setFolderPick" type="button">Choose…</button>
+            </div>
+            <p class="set-note">Where a session starts before you pick a project. Home means Claude Code asks whether to trust your whole user folder.</p>
+          </div>
+
+          <div class="set-row">
+            <label class="set-label" for="setModel">Default model</label>
+            <div class="set-control"><select id="setModel"></select></div>
+            <p class="set-note" id="setModelNote"></p>
+          </div>
+
+          <div class="set-row">
+            <label class="set-label" for="setEffort">Default effort</label>
+            <div class="set-control"><select id="setEffort"></select></div>
+            <p class="set-note">How hard the model works before answering. The router suggests one per task.</p>
+          </div>
+
+          <div class="set-row">
+            <label class="set-label" for="setHotkey">Summon key</label>
+            <div class="set-control"><select id="setHotkey"></select></div>
+            <p class="set-note" id="setHotkeyNote"></p>
+          </div>
+
+          <div class="set-row">
+            <span class="set-label">What this app is reading</span>
+            <div class="set-control">
+              <span class="set-value" id="setDiagSummary">Not checked yet</span>
+              <button class="btn btn--sm" id="setDiagRun" type="button">Check now</button>
+            </div>
+            <ul class="diag-list" id="setDiagList"></ul>
+            <p class="set-note">Three of this app's features read things Claude Code does not promise to keep the same: where it stores your login, the shape of its transcript files, and the endpoint behind the usage numbers. This says whether each still works, so a change shows up as a sentence instead of an empty list.</p>
+          </div>
+
+          <div class="set-row">
+            <span class="set-label">Learned project defaults</span>
+            <div class="set-control">
+              <span class="set-value" id="setPrefsCount"></span>
+              <button class="btn btn--sm" id="setPrefsClear" type="button">Forget them</button>
+            </div>
+            <p class="set-note">Launching a project on a model the router did not pick makes that model the project's default. This forgets all of them.</p>
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button class="btn btn--sm btn--primary" id="settingsDone" type="button">Done</button>
         </div>
       </div>
     </div>

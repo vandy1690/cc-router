@@ -16,6 +16,38 @@ routing engine:
 > [Apache License 2.0](LICENSE). The cc-router and Steven Design Co. names and marks
 > are not covered by that license.
 
+## Who this is for
+
+**You pay for a Claude Max plan and you keep running out of it.** Not at the end of
+the month, at four in the afternoon, in the middle of something. You do not know
+which of the week's work spent the budget, because nothing you use tells you until
+you are already blocked.
+
+That is the person this is built for: someone who lives in Claude Code all day, on a
+subscription rather than an API key, and who would like the expensive models spent on
+the work that deserves them.
+
+Three things it does that Claude Code alone does not:
+
+- **It shows you the meter before you pull the trigger.** Your 5-hour session, your
+  week, and your weekly Fable limit, live from Anthropic, with the reset times and a
+  breakdown of where the week went. It costs nothing to read, and it is sitting there
+  at the bottom of the window while you type.
+- **It picks the model so you stop defaulting to the expensive one.** A typo does not
+  need the top tier. A repo-wide migration does. Local rules settle the obvious cases
+  instantly and for free; a short Haiku call sizes up the rest; you can overrule any
+  of it in one click, and it learns what you pick per project.
+- **It remembers where you were.** Every past Claude Code chat, grouped by project,
+  with its title and the model it ran on, searchable, and reopenable in one click.
+
+And the part that decides whether any of it matters: **it runs on the subscription you
+already pay for.** Every hosted router bills per token through its own API, which on
+top of a Max plan means paying twice. This opens real Claude Code sessions on your
+plan, on your machine.
+
+**It is not for you if** you use Claude through an API key and a billing account, you
+work mainly on Windows or Linux, or you are happy typing `/model` yourself and have
+never once wondered where your weekly limit went.
 ## The models
 
 | Tier | Model       | ID                 | Use for                                                      |
@@ -52,6 +84,10 @@ generation is a one-file change.
   the app itself was opened from inside another Claude Code session: the parent's
   session markers are stripped (see `src/env.js`), so every chat saves its transcript
   and shows up in recall.
+- **A rail that stays put.** The window opens at the full height of the screen it
+  is on. Recent chats and Projects scroll in the left rail, and the usage panel is
+  pinned under them, so the numbers are readable without scrolling for them. Chat
+  folders start collapsed; the ones you open stay open.
 - **Live usage meter, fully automatic.** Reads your real plan usage from Anthropic
   with the Claude Code login already in your Keychain: the 5-hour session, the week,
   and the weekly Fable limit, each with its true reset time, plus how the week splits
@@ -69,28 +105,51 @@ generation is a one-file change.
   so it finds `claude` when opened from the Dock as well as from Terminal.
 - **A summon key.** Press F6 anywhere to bring the window forward. A global shortcut
   takes its key from every other app, so F6 was chosen for what it costs elsewhere:
-  macOS leaves it alone and in Cursor it is only "focus next pane". To change it, set
-  `"hotkey"` in `~/.cc-router/ui.json`. On a Mac keyboard, hold fn unless the function
-  keys are set as standard keys.
+  macOS leaves it alone and in Cursor it is only "focus next pane". Change it, or turn
+  it off, in Settings. On a Mac keyboard, hold fn unless the function keys are set as
+  standard keys.
+- **Settings.** In the menu bar under the app's own name, or ⌘, . Four defaults and a
+  reset:
+
+  | Setting | What it does |
+  |---|---|
+  | New sessions run in | The folder a session starts in before you pick a project. |
+  | Default model | Pin a tier, or let the router pick. |
+  | Default effort | Pin a level, or let the router suggest one per task. |
+  | Summon key | Any F key, or off. |
+  | Learned project defaults | Forget the models the app picked up from your overrides. |
+
+  Pinning a default model also stops the classifier running: the prompt goes straight
+  to your model, with no wait and nothing spent on routing. The free local rules still
+  run, and you can still change the model for one prompt.
+- **Projects.** The rail lists the folders you work in: the ones Claude Code has
+  history for, plus any you add. Search filters them by name and by path, Return
+  works in the first match, and clicking one sends the next session there. "Add
+  folder…" reaches a folder Claude Code has never opened, which is the only way to
+  start a first session in a new project. It is the only place that sets the target;
+  the composer shows which folder it is about to launch into but does not set it.
+- **Closing hides, quitting asks.** ⌘W and the red button hide the window and leave
+  your sessions running; the summon key or the Dock brings it back. Quitting is what
+  ends sessions, and it says how many are live before it does.
 - **Prompt starters.** The four buttons under the input write the opening words of a
   prompt into the box and leave the cursor at the end. Nothing launches.
 
-![Compose view with recent chats and live usage](docs/01-welcome.png)
-
 ![The routing card, out from under the input box, with the effort row](docs/02-routing.png)
 
-![A tabbed Claude Code session running inside the app](docs/03-session.png)
+![Settings](docs/10-settings.png)
+
+![Projects, filtered by a search](docs/11-projects.png)
 
 ![The version recommendation and the routing card, both out from under the input box](docs/05-version-drawer.png)
 
-The screenshots above use demo data. The two below are the app in real use, with a
-live usage meter and real chat history.
+The shots above use representative project names. The three below are the app in
+real use, on real chat history, with folder names blurred.
 
-![The app in use, waiting for a prompt](docs/06-real-compose.png)
+![The app waiting for a prompt: Recent chats and Projects in the rail, the usage panel pinned under them, and the composer naming the folder the next session will run in](docs/06-real-compose.png)
 
-![The app in use: a short prompt routed to Haiku 4.5 at low effort](docs/07-real-routed.png)
+![A prompt being sized up: the card reads "Picking a model, asking Haiku", Sonnet 5 and medium effort are preselected so you can launch without waiting, and every tier is one click away](docs/07-real-routed.png)
 
-![The app in use: a live Claude Code session on Sonnet 5 at medium effort, in its own tab](docs/09-real-session.png)
+![A live Claude Code session on Haiku 4.5 running in its own tab inside the app, with the rail and the usage panel still visible beside it](docs/09-real-session.png)
 
 ## The plugin
 
@@ -210,7 +269,8 @@ already covered by something better resourced, and it is a small target on purpo
 
 - **macOS 12 (Monterey) or newer.** The bundled Electron 43 will not start on older
   versions.
-- **Node.js 18 or newer** and npm. `package.json` declares this in `engines`.
+- **Node.js 22.12 or newer** and npm. Anything older runs the app but cannot build
+  the Mac app bundle.
 - **Xcode Command Line Tools** (`xcode-select --install`). `node-pty`, which runs the
   embedded terminals, is a native module and is compiled on install.
 - **Claude Code** (the `claude` CLI) installed and logged in. The app finds it in
@@ -235,20 +295,67 @@ already covered by something better resourced, and it is a small target on purpo
 
 - Claude Code 2.1.260 or newer. The manifest passes `claude plugin validate` on 2.1.277.
 
-## Setup
+## Install it on your own Mac
 
-`node_modules` is not committed. `npm install` also builds `node-pty` for Electron (a
-`postinstall` step), so two commands are enough:
+You need macOS, [Node.js](https://nodejs.org) 22.12 or newer, Claude Code, and a Claude
+subscription. Check the first two:
 
 ```bash
-npm install   # installs, then rebuilds node-pty against Electron's ABI
-npm start     # launch the app
+node --version      # v22.12 or newer
+claude --version    # 2.1.260 or newer; run `claude update` if it is older
 ```
 
-If the terminals ever fail to start after an Electron or Node update, run
-`npm run rebuild`.
+Then:
 
-The engines also run headless, without the UI:
+```bash
+git clone https://github.com/vandy1690/cc-router.git
+cd cc-router
+npm install         # also rebuilds node-pty against Electron, as a postinstall step
+npm run check       # confirms the install works on this machine
+npm start           # run it
+```
+
+`npm run check` is the one to read. It parses every source file, runs the routing
+tests, finds your `claude` command and checks its version, loads the terminal
+component, and confirms the three things this app reads that nobody promised it are
+still there. Run it any time the app behaves oddly.
+
+### Open it like any other Mac app
+
+```bash
+npm run app         # builds Claude Code Router.app into /Applications
+npm run app:remove  # uninstalls it
+```
+
+What that installs is a real Mac app, with its own name, Dock icon, and About panel,
+wrapped around a small launcher that loads the code from this folder. It always runs
+what is in the repository right now: change a file, reopen the app, and the change is
+there. Run `npm run app` again only when Electron is upgraded or the folder moves. It
+is signed ad hoc, which is enough for an app built and run on the same Mac, so it is a
+shortcut with a proper identity rather than a build to hand to someone else. Opening
+it a second time brings the existing window forward.
+
+### If something does not work
+
+| What you see | What to do |
+|---|---|
+| Sessions never start | `npm run rebuild`, then reopen. The terminal component is native and must match your Electron. |
+| "Claude Code was not found" | Install Claude Code, or check that `claude` is on the PATH your shell sets up. The app reads your PATH from an interactive login shell. |
+| Usage says "manual (auto off)" | Open Usage and press "Turn on auto usage", then choose **Always Allow** so macOS stops asking. |
+| Usage says "estimating" | Anthropic is rate-limiting the usage endpoint, or you are offline. It clears on its own. |
+| A model will not launch | Your Claude Code predates it. Run `claude update`. |
+| Anything else | `npm run check`, or open Settings and press **Check now**. |
+
+### Where it keeps things
+
+Everything lives in `~/.cc-router/`: `ui.json` (theme, your Settings defaults, the
+summon key), `folders.json` (projects you added by hand), `pins.json`, `prefs.json`
+(models learned from your overrides), and `sync.json` (manual usage anchors). Deleting
+that folder resets the app and loses nothing else. Nothing is sent anywhere: the only
+network call is to Anthropic, with the login Claude Code already stored in your
+Keychain.
+
+### The engines run headless too
 
 ```bash
 npm run route -- "migrate our API across the repo"   # route one prompt
@@ -289,7 +396,11 @@ session, the week, the weekly Fable limit, and the week's split by surface. The 
 Code OAuth token is read from the macOS Keychain, used only in the request header, and
 never logged, stored, or refreshed by this app. Claude Code owns the login.
 
-<img src="docs/08-real-usage.png" alt="The usage panel in real use: the 5-hour session at 83%, the week at 95% in red, and the weekly Fable limit at 83%, each with its reset time" width="491" />
+<img src="docs/08-real-usage.png" alt="The usage panel with the live endpoint unavailable: a line reading “Anthropic is rate-limiting the usage endpoint” with a Details link, above the session at 5%, the week at 11%, and the weekly Fable limit at 5%, each showing where its number came from and when it resets" width="491" />
+
+The capture above is the fallback in action rather than the happy path: Anthropic was
+rate-limiting the endpoint, so the panel says so in one line, marks each row as synced
+rather than live, and leaves the numbers readable instead of blanking them.
 
 That endpoint is not a documented public API, so there are two fallbacks. First, the
 `anthropic-ratelimit-unified-5h-*` and `-7d-*` headers on a one-token request, which
@@ -300,6 +411,22 @@ Code writes one transcript line per content block, and each line repeats the who
 message's token usage). Models the router no longer launches are still priced, so last
 week's sessions keep counting after a catalog update. The ceilings in
 [src/usage.js](src/usage.js) only matter on that last fallback.
+
+## What this app reads that nobody promised it
+
+Three of the best features stand on private ground, and it is worth knowing which:
+
+| Feature | What it depends on | If it changes |
+|---|---|---|
+| Live usage | An endpoint that is not a published API | Falls back to the rate-limit headers, then to a local estimate |
+| Chat recall | The shape of Claude Code's transcript files | Chats could go missing, untitled, or unbadged |
+| Live usage, again | The name of the Keychain item holding your login | Usage drops to the estimate |
+
+None of that can be made safe, so it is made loud instead. Settings has a **What this
+app is reading** row that checks all three and says what it looked for and what it
+found; `npm run check` runs the same checks from the terminal. When something is off,
+one line appears in the usage panel rather than the app quietly showing you an empty
+list or a number that is wrong. The check runs at every launch and costs nothing.
 
 ## How chat recall works
 
@@ -312,8 +439,11 @@ preferences, manual sync, theme) lives in `~/.cc-router/`.
 ## Repository layout
 
 ```
-main.js, preload.js, renderer/            the desktop app
+main.js, preload.js, renderer/            the desktop app (menu bar, Settings, Projects)
+scripts/make-app.mjs                      builds and installs the Mac app
+scripts/check.mjs                         `npm run check`: does this install work?
 src/                                      the shared engine: catalog, rules, usage, recall
+src/diagnostics.js                        the three checks behind `npm run check`
 .claude-plugin/, skills/, agents/, hooks/ the Claude Code plugin
 build/                                    the Dock icon (png, icns)
 docs/                                     README screenshots
