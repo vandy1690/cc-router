@@ -1,7 +1,7 @@
 {
   "name": "cc-router",
   "version": "1.1.0",
-  "description": "Claude Code Router: routes a prompt to the right Claude model. A macOS desktop app that runs Claude Code sessions with live plan usage and session recall, plus a Claude Code plugin that shares the same routing rules.",
+  "description": "SDC Claude Code Router: routes a prompt to the right Claude model. A macOS desktop app that runs Claude Code sessions with live plan usage and session recall, plus a Claude Code plugin that shares the same routing rules.",
   "main": "main.js",
   "scripts": {
     "route": "node src/cli.js",

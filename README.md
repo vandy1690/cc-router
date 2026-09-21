@@ -1,7 +1,7 @@
-# cc-router
+# SDC Claude Code Router
 
-**Claude Code Router** sends each prompt to the right Claude model, so the expensive
-models are saved for the work that needs them. It comes in two parts that share one
+**SDC Claude Code Router** sends each prompt to the right Claude model, so the
+expensive models are saved for the work that needs them. It comes in two parts that share one
 routing engine:
 
 - **A macOS desktop app.** You type a prompt, it picks a model, asks you when it is
@@ -161,30 +161,48 @@ contrast on both the paper and the card.
 
 ![Dark theme](docs/04-dark.png)
 
+## On the name
+
+There is an established project called **claude-code-router**
+([musistudio/claude-code-router](https://github.com/musistudio/claude-code-router)),
+with roughly 37,000 stars. It is a different tool and it got there first. This one
+carries the SDC prefix to keep the two apart, and the repository slug stays
+`cc-router`. If you came here looking for that project, the link above is it.
+
 ## How it compares, in plain English
 
-Model routers already exist, and they are good. **OpenRouter**, **Not Diamond**, and
-**Martian** all pick the best model for a prompt. **LiteLLM**, **Portkey**, and the
-**Vercel AI Gateway** add routing, fallback, and cost tracking across many providers.
-So the "pick a model" part of cc-router is not new, and that is fine. It is a small
-part.
+Plenty already exists here, and more arrives every month. The honest summary is that
+the field splits into tools that **measure** and tools that **route**, and this one is
+trying to sit in the gap between them.
 
-What those tools do not do is the thing cc-router is built around:
+**Routing.** [musistudio/claude-code-router](https://github.com/musistudio/claude-code-router)
+is the big one: a local control plane that routes coding agents across providers, with
+retries, credential pools, fallback, a desktop app and a web UI, plus per-request
+observability down to tokens and estimated cost. **OpenRouter**, **Not Diamond** and
+**Martian** pick a model per prompt. **LiteLLM**, **Portkey** and the **Vercel AI
+Gateway** add routing, fallback and cost tracking across providers. All of them run on
+provider API keys.
 
-- **They bill per token through their own API. cc-router runs on your Claude
-  subscription.** Using Fable through a hosted router costs full API price on top of
-  the Max plan you already pay for. cc-router opens real Claude Code sessions on your
-  plan, with no second bill.
-- **They are a hosted endpoint. cc-router is local** and runs real Claude Code:
-  interactive sessions, tabs, and all of Claude Code's tools, on your machine.
-- **They do not know your plan usage. cc-router shows it live**, reading your true
-  5-hour and weekly limits straight from Anthropic and warning you before you run out.
-- **They do not remember your work. cc-router recalls it:** your past Claude Code
-  sessions, by project, with titles, models, search, and pinning.
+**Measuring.** [ccusage](https://ccusage.com/) reports historical cost from local
+transcripts across many agent CLIs. Claude Code Usage Monitor gives a live terminal
+dashboard with burn rate and predictions. ccflare and Blume cover similar ground, Blume
+as a desktop app across Claude Code and Codex. None of them route.
 
-Short version: the router is the commodity. The value is a subscription-native
-launcher for Claude Code with live usage and session recall, plus a plugin that
-brings the routing sense into the editor.
+**Claude Code itself.** The desktop app now has parallel sessions, per-session history
+in a filterable sidebar, a model dropdown you can change mid-session, and a usage ring
+showing plan usage for the period. `/effort` and `--effort` are native. Subagent model
+pinning is native. Much of what this app does for sessions, Anthropic now does too.
+
+**What is left, and it is the reason this exists.** Claude Code has
+[no automatic model selection](https://code.claude.com/docs/en/model-config). You pick,
+every time, through `/model`, `--model`, an environment variable or settings. The
+routers will pick for you but bill per token on their own API keys. The monitors will
+tell you what you spent but never act on it. Anthropic gives you a picker, not a
+decision.
+
+So: **read the prompt, choose the tier, launch on the subscription you already pay for,
+and show what is left of it.** That combination is the only part of this that is not
+already covered by something better resourced, and it is a small target on purpose.
 
 ## Requirements
 

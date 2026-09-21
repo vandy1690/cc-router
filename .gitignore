@@ -15,3 +15,6 @@ out/
 
 # Local runtime state (usage sync anchors live in ~/.cc-router, not the repo)
 .cc-router/
+
+# Patch files handed around by hand; they do not belong in the history.
+*.patch

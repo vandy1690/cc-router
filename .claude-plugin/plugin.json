@@ -1,6 +1,6 @@
 {
   "name": "cc-router",
-  "displayName": "Claude Code Router",
+  "displayName": "SDC Claude Code Router",
   "version": "1.0.0",
   "description": "Model routing inside Claude Code. Flags prompts that are over- or under-powered for the model you are on, and adds one-turn commands and subagents pinned to each tier: quick (Haiku), build (Sonnet), deep (Opus), max (Fable). Needs Claude Code 2.1.260 or newer.",
   "author": {
