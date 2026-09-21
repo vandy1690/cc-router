@@ -134,20 +134,16 @@ generation is a one-file change.
 - **Prompt starters.** The four buttons under the input write the opening words of a
   prompt into the box and leave the cursor at the end. Nothing launches.
 
-![Compose view with recent chats and live usage](docs/01-welcome.png)
-
 ![The routing card, out from under the input box, with the effort row](docs/02-routing.png)
 
 ![Settings](docs/10-settings.png)
 
 ![Projects, filtered by a search](docs/11-projects.png)
 
-![A tabbed Claude Code session running inside the app](docs/03-session.png)
-
 ![The version recommendation and the routing card, both out from under the input box](docs/05-version-drawer.png)
 
-The screenshots above use demo data. The three below are the app in real use, on real
-chat history, with folder names blurred.
+The shots above use representative project names. The three below are the app in
+real use, on real chat history, with folder names blurred.
 
 ![The app waiting for a prompt: Recent chats and Projects in the rail, the usage panel pinned under them, and the composer naming the folder the next session will run in](docs/06-real-compose.png)
 
