@@ -12,8 +12,9 @@ routing engine:
   under powered for the model you are on, and adds commands that run one prompt on a
   chosen tier.
 
-> Copyright © 2026 Steven Design Services LLC. All rights reserved. Proprietary. See
-> [LICENSE](LICENSE). This is not open-source software.
+> Copyright © 2026 Steven Design Services LLC. Licensed under the
+> [Apache License 2.0](LICENSE). The cc-router and Steven Design Co. names and marks
+> are not covered by that license.
 
 ## The models
 
@@ -300,9 +301,35 @@ build/                                    the Dock icon (png, icns)
 docs/                                     README screenshots
 ```
 
-## License and ownership
+## Contributing
 
-This software and its source code are the proprietary and confidential property of
-Steven Design Services LLC. All rights reserved. No permission is granted to use, copy,
-modify, distribute, or claim this software or any part of it without prior written
-permission. See [LICENSE](LICENSE).
+Issues, ideas and pull requests are welcome. Contributions are accepted under the
+Apache License 2.0, per section 5 of the License, so there is no separate agreement
+to sign.
+
+Two things worth knowing before opening a pull request:
+
+- `npm run route:test` asserts the routing and effort rules, costs nothing, and needs
+  no network. Add a case to it for any rule you change.
+- The model catalog lives in one file, [src/models.js](src/models.js). IDs, labels,
+  prices, starting effort, and the minimum Claude Code version per model all read
+  from there.
+
+If you fork it and take it somewhere interesting, I would like to hear about it.
+
+## License
+
+Copyright © 2026 Steven Design Services LLC.
+
+Licensed under the Apache License, Version 2.0. See [LICENSE](LICENSE) and
+[NOTICE](NOTICE). You may use, modify and redistribute this software, including
+commercially, provided you keep the copyright notice and the NOTICE file and state
+what you changed.
+
+The License covers the code. Under section 6 it does not grant rights to the
+"cc-router" or "Claude Code Router" names, the Steven Design Co. name or mark, or
+the design system the app is dressed in. Fork the code freely and ship it under your
+own name.
+
+Built by Steven Vanden Heuvel, Steven Design Services LLC.
+[stevendesignco.com](https://stevendesignco.com)

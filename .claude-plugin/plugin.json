@@ -9,7 +9,7 @@
   },
   "homepage": "https://github.com/vandy1690/cc-router",
   "repository": "https://github.com/vandy1690/cc-router",
-  "license": "UNLICENSED",
+  "license": "Apache-2.0",
   "keywords": [
     "model-routing",
     "cost",
