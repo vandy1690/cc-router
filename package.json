@@ -14,7 +14,7 @@
   },
   "keywords": [],
   "author": "Steven Design Services LLC",
-  "license": "UNLICENSED",
+  "license": "Apache-2.0",
   "devDependencies": {
     "@electron/rebuild": "^4.1.0",
     "electron": "^43.0.0"
