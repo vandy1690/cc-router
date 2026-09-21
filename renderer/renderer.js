@@ -19,30 +19,94 @@ let projectPrefs = {}; // cwd -> preferred modelKey (learned from overrides)
 let khDismissed = false; // user dismissed the keychain-help panel this session
 let cli = null; // { ok, found, version, min, effort } from the Claude Code CLI preflight
 let cliDismissed = false;
+// What the Settings window holds. Replaced by the main process on load and on
+// every change; these are only the shape until then.
+let settings = { defaultFolder: "last", defaultModel: "router", defaultEffort: "router", hotkey: null, activeHotkey: null, hotkeyCandidates: [], folders: [] };
+let diag = null; // the last diagnostics run: see src/diagnostics.js
 
-// The preferred model for the current Run-in project, if any.
+// Where the next session runs. "" is Home; null means it has not been worked
+// out yet. Projects in the rail is the only control that sets it, so this is
+// the single source of truth and the composer just reports it.
+let runinCwd = null;
+
+// The preferred model for the current target, if any.
 function prefForRunin() {
-  const cwd = $("runin").value;
-  return cwd ? projectPrefs[cwd] || null : null;
+  return runinCwd ? projectPrefs[runinCwd] || null : null;
 }
 
-// Display name of the current Run-in selection.
+// Its display name.
 function runinName() {
-  const sel = $("runin");
-  const opt = sel.options[sel.selectedIndex];
-  return opt ? opt.textContent : "this project";
+  if (!runinCwd) return "Home (~)";
+  const p = projects.find((x) => x.cwd === runinCwd);
+  return p ? p.name : baseName(runinCwd);
+}
+
+function renderRunin() {
+  const el = $("runinName");
+  if (el) el.textContent = runinName();
+}
+
+// A target is valid if it is Home or a project we know about.
+function knownRunin(cwd) {
+  return cwd === "" || projects.some((p) => p.cwd === cwd);
+}
+
+// Set it, remember it, and show it everywhere it shows.
+function setRunin(cwd, { remember = true } = {}) {
+  if (!knownRunin(cwd)) return;
+  runinCwd = cwd;
+  if (remember) {
+    try {
+      localStorage.setItem(RUNIN_KEY, cwd);
+    } catch (_) {}
+  }
+  renderRunin();
+  renderFolders();
+  if (decision) {
+    applyDefault(); // this project may have its own default model
+    renderRoute();
+  }
+}
+
+// --- The defaults you set in Settings ---
+//
+// Each reads as "not set" unless it names something this catalog still has, so
+// a stale value in the file can never leave the app pointing at a model or an
+// effort level that no longer exists.
+function defaultModelKey() {
+  const k = settings.defaultModel;
+  return k && k !== "router" && MODELS[k] ? k : null;
+}
+
+function defaultEffortLevel() {
+  const e = settings.defaultEffort;
+  return e && e !== "router" && EFFORTS.includes(e) ? e : null;
+}
+
+// The default folder as a Run-in value: "" is Home, null means follow whatever
+// you chose last.
+function defaultFolderValue() {
+  const f = settings.defaultFolder;
+  if (!f || f === "last") return null;
+  return f === "home" ? "" : f;
 }
 
 // Set the chosen model from a project pref (if any) or the router's pick.
 // A model you picked by hand stays picked while you keep typing: the router
 // re-deciding under you, and then launching its choice instead of yours, would
 // be the worst kind of surprise. Clearing the prompt clears the pick.
+// Order: what you picked for this prompt, then this project's learned default,
+// then your default model from Settings, then the router.
 function applyDefault() {
   if (chosenSource === "manual" && chosenKey && MODELS[chosenKey]) return;
   const pref = prefForRunin();
+  const dflt = defaultModelKey();
   if (pref && MODELS[pref]) {
     chosenKey = pref;
     chosenSource = "pref";
+  } else if (dflt) {
+    chosenKey = dflt;
+    chosenSource = "default";
   } else {
     chosenKey = decision.modelKey;
     chosenSource = "router";
@@ -175,22 +239,28 @@ function fmtCountdown(iso) {
 
 // m.color is a severity ("ok" | "warn" | "over"); the stylesheet owns the look.
 // The percentage and the word "over" carry the state, so colour is never alone.
+// One line, then the bar. The panel is pinned to the bottom of the rail, so
+// every row it spends is a row the chats and projects above lose: the reset
+// time sits beside the percentage instead of on a line of its own, and "Auto"
+// is dropped because the heading beside "Usage" already says live.
 function renderMeter(el, label, m, countdown, extra) {
-  const tag = m.live ? "Auto · " : m.synced ? "Synced · " : "";
+  const tag = m.live ? "" : m.synced ? "Synced · " : "";
   let reset;
-  if (!m.resetAt) reset = "Resets —";
-  else if (countdown) reset = "Resets in " + fmtCountdown(m.resetAt);
-  else reset = "Resets " + fmtReset(m.resetAt);
+  if (!m.resetAt) reset = "no reset time";
+  else if (countdown) reset = fmtCountdown(m.resetAt) + " left";
+  else reset = fmtReset(m.resetAt);
   const shown = Math.min(100, m.pct);
   el.innerHTML = `
     <div class="meter-top">
       <span class="meter-label">${label}</span>
-      <span class="meter-pct ${m.over ? "over" : ""}">${m.pct}%${m.over ? " · over" : ""}</span>
+      <span class="meter-right">
+        <span class="meter-pct ${m.over ? "over" : ""}">${m.pct}%${m.over ? " · over" : ""}</span>
+        <span class="meter-reset">${tag}${reset}</span>
+      </span>
     </div>
-    <div class="meter-track ${m.color}" role="meter" aria-label="${label}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${shown}" aria-valuetext="${m.pct}%${m.over ? ", over the limit" : ""}">
+    <div class="meter-track ${m.color}" role="meter" aria-label="${label}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${shown}" aria-valuetext="${m.pct}%${m.over ? ", over the limit" : ""}, resets ${escapeHtml(reset)}">
       <div class="meter-fill" style="width:${shown}%"></div>
-    </div>
-    <div class="meter-bottom">${tag}${reset}</div>${extra ? `<div class="meter-extra">${extra}</div>` : ""}`;
+    </div>${extra ? `<div class="meter-extra">${extra}</div>` : ""}`;
 }
 
 // Where the week went, from the live breakdown: "Cowork 81% · Claude Code 17%".
@@ -199,11 +269,12 @@ function breakdownText(rows) {
   return "This week: " + rows.map((r) => `${escapeHtml(r.name)} ${r.pct}%`).join(" · ");
 }
 
-// Why live usage is off, in words.
+// Why the meter is not live, in the chip, with the rest in its tooltip.
 const LIVE_OFF = {
-  no_token: "· manual (auto off)",
-  http_401: "· login expired",
-  network: "· offline",
+  no_token: ["· manual (auto off)", "This app could not read your Claude Code login, so the meter is estimating from your transcripts."],
+  http_401: ["· login expired", "Anthropic refused the login. Open any Claude Code session and it refreshes itself."],
+  network: ["· offline", "No answer from the network. The meter is estimating from your transcripts."],
+  rate_limited: ["· estimating", "Anthropic is rate-limiting the usage endpoint. Nothing is being retried for a few minutes, so no tokens are spent, and the meter estimates from your transcripts until it clears."],
 };
 
 // --- Manual sync ---
@@ -261,13 +332,22 @@ async function loadUsage() {
   const status = $("usageStatus");
   if (status) {
     if (usage.live) {
-      status.textContent = "· live";
+      // Which source answered, in the chip rather than buried: the header
+      // fallback has no Fable number, and held numbers are not current.
+      const held = usage.liveStale;
+      const partial = usage.liveSource === "headers";
+      status.textContent = held ? "· live, held" : partial ? "· live, partial" : "· live";
       status.className = "usage-status on";
-      status.title = "Read from Anthropic. Refreshes every minute and when you return to the window.";
+      status.title = held
+        ? "Anthropic's usage endpoint is unavailable, so the last good numbers are being held rather than dropped. They refresh on their own."
+        : partial
+        ? "Read from the rate-limit headers. Session and week are real; the Fable meter is an estimate."
+        : "Read from Anthropic's usage endpoint. Refreshes every minute and when you return to the window. It costs no tokens.";
     } else {
-      status.textContent = usage.liveError ? LIVE_OFF[usage.liveError] || "· manual" : "";
+      const off = LIVE_OFF[usage.liveError] || ["· estimating", "The meter is estimating from your local transcripts."];
+      status.textContent = usage.liveError ? off[0] : "";
       status.className = "usage-status off";
-      status.title = usage.liveError === "http_401" ? "Open any Claude Code session and the login refreshes itself." : "";
+      status.title = usage.liveError ? off[1] : "";
     }
   }
   // Manual sync is only a fallback. When every meter is live it has no job.
@@ -280,6 +360,64 @@ async function loadUsage() {
     kh.hidden = !(needsKeychain && !khDismissed);
   }
   updateLaunchState();
+}
+
+// Diagnostics. Run at every launch because it is nearly free, and shown only
+// when something is wrong: a flag, not a dashboard.
+async function loadDiagnostics() {
+  diag = await window.cc.diagnostics();
+  renderDiagLine();
+  if (!$("settings").hidden) renderSettings();
+  return diag;
+}
+
+function worstCheck() {
+  if (!diag) return null;
+  const order = { fail: 0, warn: 1, ok: 2 };
+  return Object.values(diag.checks).sort((a, b) => order[a.state] - order[b.state])[0];
+}
+
+function renderDiagLine() {
+  const el = $("diagLine");
+  if (!el) return;
+  const w = worstCheck();
+  if (!diag || !w || w.state === "ok") {
+    el.hidden = true;
+    return;
+  }
+  const n = Object.values(diag.checks).filter((c) => c.state !== "ok").length;
+  el.className = "diag-line " + w.state;
+  el.hidden = false;
+  el.innerHTML =
+    `<span class="diag-line__dot" aria-hidden="true"></span>` +
+    `<span class="diag-line__text">${escapeHtml(w.summary)}${n > 1 ? ` (+${n - 1} more)` : ""}</span>` +
+    `<button class="diag-line__open" type="button" id="diagOpen">Details</button>`;
+  $("diagOpen").addEventListener("click", openSettings);
+}
+
+const DIAG_LABEL = { keychain: "Your Claude Code login", recall: "Chat history", usage: "Plan usage" };
+
+function renderDiagnostics() {
+  const summary = $("setDiagSummary");
+  const list = $("setDiagList");
+  if (!summary || !list) return;
+  if (!diag) {
+    summary.textContent = "Not checked yet";
+    list.innerHTML = "";
+    return;
+  }
+  const bad = Object.values(diag.checks).filter((c) => c.state !== "ok").length;
+  summary.textContent = bad
+    ? `${bad} of 3 need attention`
+    : `All 3 working${diag.cliVersion ? `, on Claude Code ${diag.cliVersion}` : ""}`;
+  list.innerHTML = Object.entries(diag.checks)
+    .map(
+      ([key, c]) => `<li class="${c.state}">
+        <span class="diag-dot" aria-hidden="true"></span>
+        <span><b>${escapeHtml(DIAG_LABEL[key] || key)}: ${escapeHtml(c.summary)}</b><p>${escapeHtml(c.detail)}</p></span>
+      </li>`
+    )
+    .join("");
 }
 
 function overForKey(key) {
@@ -348,6 +486,21 @@ async function runRoute() {
     return;
   }
 
+  // You have named a default model in Settings, so there is nothing for the
+  // classifier to decide. Skip it: no ten-second wait, no tokens. The free
+  // local rules already ran, and they had no strong opinion either.
+  const dflt = defaultModelKey();
+  if (dflt) {
+    settle({
+      modelKey: dflt,
+      confidence: 1,
+      source: "your default",
+      needsConfirm: false,
+      reason: `Your default model, set in Settings. The router only steps in when the wording is unmistakable, so it did not ask Haiku about this one.`,
+    });
+    return;
+  }
+
   // Step 2: the classifier, which takes several seconds. Say so at once and
   // unlock Launch on the default. Without this the app looked dead: no status
   // and a disabled button for as long as the call ran.
@@ -360,13 +513,6 @@ async function runRoute() {
   if (seq !== routeSeq) return;
   settle(d);
 }
-
-// Re-apply the project default when the Run-in target changes.
-$("runin").addEventListener("change", () => {
-  if (!decision) return;
-  applyDefault();
-  renderRoute();
-});
 
 // Open or close the routing card. Closed, it stays in the DOM with its last
 // content, so it can slide away instead of vanishing.
@@ -384,8 +530,10 @@ function recommendedEffort(key) {
   return MODELS[key].effort;
 }
 
+// What the session will actually run at: your pick for this prompt, then your
+// default from Settings, then the router's recommendation.
 function currentEffort(key) {
-  return chosenEffort || recommendedEffort(key);
+  return chosenEffort || defaultEffortLevel() || recommendedEffort(key);
 }
 
 function renderRoute() {
@@ -418,6 +566,8 @@ function renderRoute() {
     state = "ask";
     if (ask) {
       title = "Not sure. Pick a model";
+    } else if (chosenSource === "default") {
+      title = `Your default model: ${m.label}`;
     } else if (chosenSource === "pref") {
       title = `Your default for ${escapeHtml(runinName())}: ${m.label}`;
       clear = ` <button class="pref-clear" id="prefClear" type="button" aria-label="Clear this project's default model" title="Clear this project's default">✕</button>`;
@@ -440,7 +590,7 @@ function renderRoute() {
   if (prefClear) {
     prefClear.addEventListener("click", (e) => {
       e.stopPropagation();
-      const cwd = $("runin").value;
+      const cwd = runinCwd;
       if (cwd) {
         window.cc.prefsSet(cwd, null);
         delete projectPrefs[cwd];
@@ -543,7 +693,7 @@ $("launch").addEventListener("click", requestLaunch);
 function doLaunch(key) {
   const model = MODELS[key].id;
   const prompt = $("prompt").value.trim();
-  const cwd = $("runin").value || undefined;
+  const cwd = runinCwd || undefined;
   // Learn: launching a project with a model that overrides the router's pick
   // makes that model the project's default going forward.
   // A pending decision is only a placeholder, so there is nothing to override.
@@ -613,13 +763,37 @@ function showOldCliModal(key) {
 async function loadProjects() {
   projects = await window.cc.projects();
   pinnedSet = new Set(await window.cc.pinsGet());
-  const runin = $("runin");
-  runin.innerHTML =
-    `<option value="">Home (~)</option>` +
-    projects
-      .map((p) => `<option value="${escapeAttr(p.cwd)}">${escapeHtml(p.name)}</option>`)
-      .join("");
+  runinCwd = pickRunin(runinCwd); // keep the current choice if it still exists
+  renderRunin();
   renderProjects($("chatSearch").value);
+  renderFolders();
+}
+
+// Where a new session runs. Home used to be the default, which hands Claude Code
+// your whole user folder and earns its "do you trust this folder?" prompt every
+// time. Now: what you chose last, else your most recent real project. Home is
+// still one click away.
+const RUNIN_KEY = "cc.runin";
+function pickRunin(current) {
+  const known = new Set(projects.map((p) => p.cwd));
+  if (current && known.has(current)) return current;
+  // A folder named in Settings outranks the last one used.
+  const dflt = defaultFolderValue();
+  if (dflt === "" || (dflt && known.has(dflt))) return dflt;
+  let saved = null;
+  try {
+    saved = localStorage.getItem(RUNIN_KEY);
+  } catch (_) {}
+  if (saved === "") return ""; // Home, chosen on purpose
+  if (saved && known.has(saved)) return saved;
+  const recent = projects.find((p) => p.cwd && p.cwd !== homeDir());
+  return recent ? recent.cwd : "";
+}
+
+// The home folder, read off the project paths (the renderer has no os module).
+function homeDir() {
+  const m = projects.map((p) => p.cwd || "").join("\n").match(/^\/Users\/[^/\n]+/m);
+  return m ? m[0] : null;
 }
 
 const FOLDER_SVG = `<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h5l2 3h7a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2z"/></svg>`;
@@ -634,6 +808,10 @@ function modelShort(id) {
 }
 
 // Render the projects list, filtered by the search query, pinned ones on top.
+// Folders you opened in Recent chats, by path. Empty at launch, on purpose:
+// twelve projects' worth of chats unrolled is not a starting point.
+const expandedChats = new Set();
+
 function renderProjects(query) {
   const q = (query || "").trim().toLowerCase();
   const list = $("projects");
@@ -647,13 +825,15 @@ function renderProjects(query) {
     .sort((a, b) => (pinnedSet.has(b.cwd) ? 1 : 0) - (pinnedSet.has(a.cwd) ? 1 : 0));
 
   const items = [];
-  sorted.forEach((p, i) => {
+  sorted.filter((p) => !p.added).forEach((p, i) => {
     const nameMatch = !q || p.name.toLowerCase().includes(q) || p.cwd.toLowerCase().includes(q);
     const chats = p.chats.filter(
       (c) => !q || nameMatch || (c.title || "").toLowerCase().includes(q)
     );
     if (q && !nameMatch && chats.length === 0) return; // hide non-matches while searching
-    const open = q ? true : pinnedSet.has(p.cwd) || i === 0;
+    // Closed at launch. A search opens everything it matched, and a folder you
+    // opened by hand stays open when the list refreshes.
+    const open = q ? true : expandedChats.has(p.cwd);
     items.push(renderProject(p, chats, open, pinnedSet.has(p.cwd)));
   });
 
@@ -680,7 +860,7 @@ function renderProject(p, chats, open, pinned) {
   return `
     <div class="project ${open ? "open" : ""}">
       <div class="project-head">
-        <button class="project-toggle" type="button" aria-expanded="${open}">
+        <button class="project-toggle" type="button" data-cwd="${escapeAttr(p.cwd)}" aria-expanded="${open}">
           <span class="folder">${FOLDER_SVG}</span>
           <span class="project-name">${escapeHtml(p.name)}</span>
         </button>
@@ -702,6 +882,8 @@ function wireProjects() {
     btn.addEventListener("click", () => {
       const open = btn.closest(".project").classList.toggle("open");
       btn.setAttribute("aria-expanded", String(open));
+      if (open) expandedChats.add(btn.dataset.cwd);
+      else expandedChats.delete(btn.dataset.cwd);
     })
   );
   list.querySelectorAll(".chat").forEach((chat) =>
@@ -962,6 +1144,11 @@ $("termView").addEventListener("click", () => {
 window.addEventListener(
   "keydown",
   (e) => {
+    if (e.key === "Escape" && !$("settings").hidden) {
+      e.preventDefault();
+      closeSettings();
+      return;
+    }
     if (e.key === "Escape" && !$("modal").hidden) {
       e.preventDefault();
       closeModal();
@@ -1009,6 +1196,244 @@ document.querySelectorAll("#chips .chip").forEach((chip) =>
   })
 );
 
+// ---------- Projects panel ----------
+//
+// Recent chats is what you worked on. This is where you work: clicking a
+// project makes it the target for the next session, the same value the Run in
+// box holds. "Add folder…" reaches a folder Claude Code has never opened, which
+// is the only way to start the first session in a new project.
+
+function selectFolder(cwd) {
+  setRunin(cwd);
+}
+
+// Which projects the search box is showing, top one first. Enter picks it.
+let folderMatches = [];
+
+function renderFolders() {
+  const list = $("folderList");
+  if (!list) return;
+  const cur = runinCwd;
+  const dflt = defaultFolderValue();
+  const home = homeDir();
+  const q = ($("folderSearch").value || "").trim().toLowerCase();
+
+  let rows = projects
+    .filter((p) => p.cwd && p.cwd !== home) // the Home row below covers that one
+    .slice()
+    .sort((a, b) => (pinnedSet.has(b.cwd) ? 1 : 0) - (pinnedSet.has(a.cwd) ? 1 : 0));
+  // Home last and muted. It is a folder you can work in, but handing Claude
+  // Code your whole user folder is what its trust prompt asks about.
+  rows.push({ cwd: "", name: "Home (~)", home: true });
+
+  // Search the name and the path, so "spec" finds it and so does "Documents".
+  if (q) rows = rows.filter((p) => p.name.toLowerCase().includes(q) || (p.cwd || "").toLowerCase().includes(q));
+  folderMatches = rows.map((p) => p.cwd);
+
+  if (!rows.length) {
+    list.innerHTML = `<div class="loading">No project matches “${escapeHtml(q)}”. Add folder… reaches any folder on this Mac.</div>`;
+    return;
+  }
+
+  list.innerHTML = rows
+    .map((p) => {
+      const on = p.cwd === cur;
+      const isDefault = dflt !== null && p.cwd === dflt;
+      const tag = isDefault ? `<span class="folder-tag">Default</span>` : "";
+      const x = p.added
+        ? `<button class="folder-x" type="button" data-remove="${escapeAttr(p.cwd)}" aria-label="Remove ${escapeAttr(p.name)} from Projects" title="Remove from Projects">✕</button>`
+        : "";
+      return `<div class="folder-item${p.home ? " folder-item--home" : ""}">
+        <button class="folder-row${on ? " active" : ""}" type="button" data-cwd="${escapeAttr(p.cwd)}" aria-current="${on}" title="${escapeAttr(p.cwd || "Your home folder")}">
+          <span class="folder">${FOLDER_SVG}</span>
+          <span class="folder-name">${escapeHtml(p.name)}</span>
+          ${tag}
+        </button>${x}
+      </div>`;
+    })
+    .join("");
+
+  list.querySelectorAll(".folder-row").forEach((b) =>
+    b.addEventListener("click", () => selectFolder(b.dataset.cwd))
+  );
+  list.querySelectorAll(".folder-x").forEach((b) =>
+    b.addEventListener("click", async (e) => {
+      e.stopPropagation();
+      await window.cc.folderRemove(b.dataset.remove);
+      await loadProjects();
+    })
+  );
+}
+
+// Links leave the app. The main process checks the address before opening it.
+$("sdcLink").addEventListener("click", (e) => {
+  e.preventDefault();
+  window.cc.openExternal(e.currentTarget.href);
+});
+
+$("folderSearch").addEventListener("input", renderFolders);
+// Return works in the project you are looking at, without reaching for the mouse.
+$("folderSearch").addEventListener("keydown", (e) => {
+  if (e.key !== "Enter" || !folderMatches.length) return;
+  e.preventDefault();
+  selectFolder(folderMatches[0]);
+  $("prompt").focus();
+});
+
+$("folderAdd").addEventListener("click", async () => {
+  const r = await window.cc.folderAdd();
+  if (!r || !r.ok) return; // the chooser was cancelled
+  await loadProjects();
+  selectFolder(r.dir);
+});
+
+// ---------- Settings ----------
+//
+// Opened from the menu bar (Claude Code Router, Settings) or ⌘, . Every change
+// saves as you make it, so there is nothing to submit; Done just closes.
+
+let settingsReturnFocus = null;
+
+function fillSelect(el, options, value) {
+  el.innerHTML = options
+    .map(([v, label, title]) => `<option value="${escapeAttr(v)}"${title ? ` title="${escapeAttr(title)}"` : ""}>${escapeHtml(label)}</option>`)
+    .join("");
+  el.value = value;
+  if (el.selectedIndex < 0) el.selectedIndex = 0; // a stale saved value: fall back to the first
+}
+
+const baseName = (p) => String(p).replace(/\/+$/, "").split("/").pop() || p;
+
+function renderSettings() {
+  const home = homeDir();
+
+  // Where new sessions run.
+  const folderOpts = [
+    ["last", "Wherever I chose last"],
+    ["home", "Home (~)"],
+  ];
+  const seen = new Set(["", "last", "home", home]);
+  for (const p of projects) {
+    if (p.cwd && !seen.has(p.cwd)) {
+      seen.add(p.cwd);
+      folderOpts.push([p.cwd, p.name, p.cwd]);
+    }
+  }
+  const f = settings.defaultFolder || "last";
+  if (!seen.has(f)) folderOpts.push([f, baseName(f), f]); // a folder that has since gone
+  fillSelect($("setFolder"), folderOpts, f);
+
+  // Default model.
+  fillSelect(
+    $("setModel"),
+    [["router", "Let the router pick"], ...ORDER.map((k) => [k, `${MODELS[k].label} ${MODELS[k].cost}`, MODELS[k].blurb])],
+    defaultModelKey() || "router"
+  );
+  $("setModelNote").textContent = defaultModelKey()
+    ? "Every prompt starts here, and the app stops paying Haiku to size prompts up. The free local rules still run, and you can change the model for one prompt."
+    : "Local rules settle the obvious prompts instantly and for free. A short Haiku call sizes up the rest.";
+
+  // Default effort.
+  fillSelect($("setEffort"), [["router", "Let the router pick"], ...EFFORTS.map((e) => [e, e])], defaultEffortLevel() || "router");
+
+  // Summon key.
+  const keys = Array.from({ length: 12 }, (_, i) => "F" + (i + 1));
+  fillSelect($("setHotkey"), [["", "First free key"], ["none", "Off"], ...keys.map((k) => [k, k])], settings.hotkey || "");
+  const active = settings.activeHotkey;
+  const asked = settings.hotkey;
+  $("setHotkeyNote").textContent =
+    settings.hotkey === "none"
+      ? "No summon key. Open the app from the Dock or Spotlight."
+      : !active
+      ? "No key could be registered: another app is holding them."
+      : asked && asked !== active
+      ? `${asked} is taken by another app, so ${active} is in use. It works anywhere, and takes the key away from other apps while this app runs.`
+      : `${active} works anywhere, and other apps lose it while this app runs. Hold fn with it unless your function keys are set as standard keys.`;
+
+  renderDiagnostics();
+
+  // Learned per-project defaults.
+  const n = Object.keys(projectPrefs).length;
+  $("setPrefsCount").textContent = n ? `${n} project${n === 1 ? "" : "s"}` : "None yet";
+  $("setPrefsClear").disabled = !n;
+}
+
+function openSettings() {
+  settingsReturnFocus = document.activeElement;
+  renderSettings();
+  $("settings").hidden = false;
+  $("setFolder").focus();
+}
+
+function closeSettings() {
+  $("settings").hidden = true;
+  if (settingsReturnFocus && settingsReturnFocus.focus) settingsReturnFocus.focus();
+  settingsReturnFocus = null;
+}
+
+// Save, then show the change everywhere it shows.
+async function updateSettings(patch) {
+  settings = await window.cc.settingsSet(patch);
+  applySettings();
+  renderSettings();
+  // The model default decides whether the classifier runs at all, so a prompt
+  // already on screen is routed again under the new rule.
+  if ("defaultModel" in patch && $("prompt").value.trim()) {
+    routeSeq++;
+    runRoute();
+  }
+}
+
+// Push the current settings into the window.
+function applySettings() {
+  const k = settings.activeHotkey;
+  $("hotkeyKey").textContent = k || "";
+  $("hotkeyHint").hidden = !k;
+
+  const dflt = defaultFolderValue();
+  if (dflt !== null && knownRunin(dflt)) setRunin(dflt);
+  renderRunin();
+  renderFolders();
+  if (decision) {
+    applyDefault();
+    renderRoute();
+  }
+}
+
+$("setFolder").addEventListener("change", () => updateSettings({ defaultFolder: $("setFolder").value }));
+$("setModel").addEventListener("change", () => updateSettings({ defaultModel: $("setModel").value }));
+$("setEffort").addEventListener("change", () => updateSettings({ defaultEffort: $("setEffort").value }));
+$("setHotkey").addEventListener("change", () => updateSettings({ hotkey: $("setHotkey").value || null }));
+$("settingsDone").addEventListener("click", closeSettings);
+
+$("setFolderPick").addEventListener("click", async () => {
+  const dir = await window.cc.pickFolder();
+  if (!dir) return;
+  await updateSettings({ defaultFolder: dir }); // the main process adds it to Projects too
+  await loadProjects();
+  renderSettings();
+  selectFolder(dir);
+});
+
+$("setDiagRun").addEventListener("click", async () => {
+  const b = $("setDiagRun");
+  b.disabled = true;
+  b.textContent = "Checking…";
+  await loadDiagnostics();
+  b.textContent = "Check now";
+  b.disabled = false;
+  renderSettings();
+});
+
+$("setPrefsClear").addEventListener("click", async () => {
+  projectPrefs = await window.cc.prefsClear();
+  renderSettings();
+  if (decision) {
+    applyDefault();
+    renderRoute();
+  }
+});
+
 // ---------- init ----------
 
 (async () => {
@@ -1018,10 +1443,13 @@ document.querySelectorAll("#chips .chip").forEach((chip) =>
   ORDER = cat.order;
   EFFORTS = cat.efforts || [];
   syncThemeToggle();
+  // Settings before projects: the Run-in default is one of them.
+  settings = await window.cc.settingsGet();
   if (window.cc.hotkey) {
     $("hotkeyKey").textContent = window.cc.hotkey;
     $("hotkeyHint").hidden = false;
   }
+  window.cc.onOpenSettings(openSettings); // the menu bar item and ⌘,
   projectPrefs = await window.cc.prefsGet();
   loadUsage();
   loadProjects();
@@ -1030,4 +1458,7 @@ document.querySelectorAll("#chips .chip").forEach((chip) =>
   // back to the window. The live source is a free GET, so this costs nothing.
   setInterval(loadUsage, 60000);
   window.addEventListener("focus", loadUsage);
+  // Last, so the usage check reads the cache the line above just filled rather
+  // than asking Anthropic a second time.
+  loadDiagnostics();
 })();

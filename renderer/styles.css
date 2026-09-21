@@ -201,6 +201,19 @@ code {
   color: var(--text);
 }
 
+/* Read aloud, never drawn. */
+.sr-only {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
 /* ---- Buttons: two weights only, both on the 10px control radius ---- */
 .btn {
   display: inline-flex;
@@ -257,6 +270,16 @@ code {
 }
 
 /* Colophon: bottom right, in the caption size. */
+.colophon-link {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+  transition: color 0.14s ease;
+}
+.colophon-link:hover {
+  color: var(--text);
+}
 .colophon {
   flex: none;
   margin-top: -8px; /* sits closer to the panes than a full gap */
@@ -282,9 +305,10 @@ code {
   gap: var(--space-md);
   align-items: stretch;
 }
-/* Each column is its own scroller. The padding and matching negative margin
-   leave room for a focus ring at the scroller's edge. */
-.col-left,
+/* The chat column scrolls as one. The left rail splits: chats and projects
+   scroll, Usage stays pinned at the bottom where it is always readable. The
+   padding and matching negative margin leave room for a focus ring at the
+   scroller's edge. */
 .col-right {
   min-width: 0;
   min-height: 0;
@@ -294,12 +318,44 @@ code {
 }
 .col-left {
   grid-column: span 4;
+  min-width: 0;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   gap: var(--space-md);
+  overflow: hidden;
 }
-.col-left > * {
-  flex: none; /* panels keep their height; the column scrolls instead */
+.rail-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  margin: -6px;
+  padding: 6px;
+}
+/* When the rail runs short, the two panels give up height and their own lists
+   scroll, rather than the rail clipping a card in half. The rail only scrolls
+   once both panels are down to their floor. */
+.rail-scroll > .panel {
+  flex: 0 1 auto;
+  min-height: 132px;
+  display: flex;
+  flex-direction: column;
+}
+.rail-scroll .projects-list,
+.rail-scroll .folder-list {
+  flex: 1;
+  min-height: 0;
+  max-height: none;
+}
+/* Pinned, but never more than half the rail: on a short window the chats and
+   projects above still need room. */
+.col-left > .meters {
+  flex: none;
+  max-height: 52%;
+  overflow-y: auto;
 }
 .col-right {
   grid-column: span 8;
@@ -321,8 +377,11 @@ code {
     overflow: auto;
   }
   .col-left,
-  .col-right {
+  .col-right,
+  .rail-scroll,
+  .col-left > .meters {
     overflow: visible;
+    max-height: none;
   }
   .grid {
     grid-template-columns: 1fr;
@@ -444,8 +503,7 @@ kbd {
 
 /* ---- Inputs ---- */
 .chat-search,
-.sync-fields input,
-.runin select {
+.sync-fields input {
   border: 1px solid var(--rule-strong);
   border-radius: var(--radius-sm);
   background: var(--bg);
@@ -556,8 +614,8 @@ kbd {
 .meter-row {
   display: flex;
   flex-direction: column;
-  gap: 7px;
-  padding: 12px 0;
+  gap: 6px;
+  padding: 9px 0;
 }
 .meter-row + .meter-row {
   border-top: 1px solid var(--rule);
@@ -574,20 +632,27 @@ kbd {
 .meter-label {
   font-size: 13px;
 }
+.meter-right {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+  white-space: nowrap;
+}
 .meter-pct {
   font-size: 13px;
   font-weight: 700;
 }
-.meter-pct.over {
-  color: var(--over);
-}
-.meter-bottom {
+.meter-reset {
   font-size: 11.5px;
   color: var(--text-mute);
+}
+.meter-pct.over {
+  color: var(--over);
 }
 .meter-extra {
   font-size: 11.5px;
   color: var(--text-mute);
+  margin-top: -1px;
 }
 .meter-track {
   --meter: var(--accent);
@@ -712,17 +777,17 @@ kbd {
   border-top: 1px solid var(--rule);
 }
 .runin {
+  margin: 0;
+  min-width: 0;
   font-size: 12.5px;
   color: var(--text-mute);
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
-.runin select {
-  font-size: 12.5px;
-  padding: 6px 8px;
-  max-width: 180px;
+.runin b {
+  font-weight: 600;
+  color: var(--text);
 }
 .bar-right {
   display: flex;
@@ -1230,6 +1295,277 @@ button.eff-note:hover {
   flex: none;
   padding: 5px 11px;
   font-size: 11.5px;
+}
+
+/* ---- Projects: where the next session runs ----
+   Recent chats above is what you worked on. The selected project wears solid
+   ink, the same "this one" language as the active tab and the pressed chip. */
+.folder-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 240px;
+  overflow-y: auto;
+  margin: -6px -8px;
+  padding: 6px 8px; /* room for the focus ring inside the scroller */
+}
+.folder-list::-webkit-scrollbar {
+  width: 8px;
+}
+.folder-list::-webkit-scrollbar-thumb {
+  background: var(--rule-strong);
+  border-radius: 4px;
+  border: 2px solid var(--surface);
+}
+/* The one action under the list, full width, so the head can hold the search
+   box the way Recent chats does. */
+.panel-foot {
+  display: flex;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--rule);
+}
+.panel-foot .btn {
+  flex: 1;
+  justify-content: center;
+}
+.folder-item {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+.folder-row {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 7px 10px;
+  text-align: left;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  color: var(--text);
+  transition: background 0.14s ease, color 0.14s ease;
+}
+.folder-row:hover {
+  background: var(--surface-2);
+}
+.folder-row.active {
+  background: var(--text);
+  color: var(--bg);
+}
+.folder-row.active .folder {
+  color: var(--bg);
+}
+.folder-row.active :focus-visible {
+  outline-color: var(--bg);
+}
+.folder-name {
+  flex: 1;
+  min-width: 0;
+  font-size: 13px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.folder-item--home .folder-name {
+  font-weight: 500;
+  color: var(--text-mute);
+}
+.folder-item--home .folder-row.active .folder-name {
+  color: var(--bg);
+}
+.folder-tag {
+  flex: none;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-mute);
+  border: 1px solid var(--rule);
+  border-radius: 5px;
+  padding: 2px 6px;
+}
+.folder-row.active .folder-tag {
+  color: var(--bg);
+  border-color: color-mix(in srgb, currentColor 45%, transparent);
+}
+.folder-x {
+  flex: none;
+  font-size: 11px;
+  line-height: 1;
+  color: var(--text-mute);
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  padding: 7px 8px;
+}
+.folder-x:hover {
+  color: var(--over);
+  background: var(--surface-2);
+}
+
+/* One line in the pinned Usage panel when a check is unhappy. Nothing when
+   everything is fine: this is a flag, not a dashboard. */
+.diag-line {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--rule);
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--text);
+}
+.diag-line__dot {
+  flex: none;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  transform: translateY(-1px);
+}
+.diag-line.warn .diag-line__dot {
+  background: var(--warn);
+}
+.diag-line.fail .diag-line__dot {
+  background: var(--over);
+}
+.diag-line__text {
+  flex: 1;
+  min-width: 0;
+}
+.diag-line__open {
+  flex: none;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+  background: transparent;
+  border: none;
+  border-radius: 5px;
+  padding: 0 2px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* ---- Settings ---- */
+/* The rows scroll; the title and Done stay put, so the way out is always on
+   screen however short the window is. */
+.modal--wide {
+  width: 560px;
+  max-height: calc(100vh - 96px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.modal--wide .modal-title,
+.modal--wide .modal-actions {
+  flex: none;
+}
+.modal--wide .modal-actions {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--rule);
+}
+.set-rows {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: grid;
+  gap: 18px;
+  align-content: start;
+  /* room for the focus ring on a control at the edge of the scroller */
+  margin: -4px;
+  padding: 4px;
+}
+.set-rows::-webkit-scrollbar {
+  width: 8px;
+}
+.set-rows::-webkit-scrollbar-thumb {
+  background: var(--rule-strong);
+  border-radius: 4px;
+  border: 2px solid var(--bg);
+}
+.set-row {
+  display: grid;
+  gap: 7px;
+}
+.set-label {
+  font-size: 13px;
+  font-weight: 700;
+}
+.set-control {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.set-control select {
+  flex: 1;
+  min-width: 0;
+  font-size: 13px;
+  padding: 7px 10px;
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text);
+}
+.set-value {
+  flex: 1;
+  font-size: 13px;
+  color: var(--text-mute);
+}
+.diag-list {
+  list-style: none;
+  margin: 2px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+.diag-list li {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 8px;
+  font-size: 12.5px;
+  line-height: 1.45;
+}
+.diag-list .diag-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  margin-top: 6px;
+}
+.diag-list .ok .diag-dot {
+  background: var(--ok);
+}
+.diag-list .warn .diag-dot {
+  background: var(--warn);
+}
+.diag-list .fail .diag-dot {
+  background: var(--over);
+}
+.diag-list b {
+  font-weight: 600;
+}
+.diag-list p {
+  margin: 2px 0 0;
+  color: var(--text-mute);
+}
+.set-note {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-mute);
+  text-wrap: pretty;
+}
+.btn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.btn:disabled:hover {
+  border-color: var(--rule-strong);
+  transform: none;
 }
 
 /* ---- Modal ---- */

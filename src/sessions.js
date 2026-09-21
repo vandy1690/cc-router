@@ -129,14 +129,6 @@ async function allProjects({ limit = 25 } = {}) {
   return out;
 }
 
-// The command to reopen a past chat, optionally forcing a model. Runs in the
-// project's cwd so Claude Code resolves the right session history.
-function resumeCommand(cwd, sessionId, modelId) {
-  const args = ["--resume", sessionId];
-  if (modelId) args.push("--model", modelId);
-  return { cmd: "claude", args, cwd };
-}
-
 module.exports = {
   PROJECTS_DIR,
   listProjects,
@@ -144,5 +136,4 @@ module.exports = {
   readSessionMeta,
   projectSummary,
   allProjects,
-  resumeCommand,
 };

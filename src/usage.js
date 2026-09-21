@@ -281,6 +281,11 @@ function applyLive(base, live) {
   base.breakdown = live.breakdown || [];
   base.liveSource = live.source || null;
   base.live = true;
+  // A number a few minutes old, kept while the endpoint is rate-limited.
+  if (live.stale) {
+    base.liveStale = true;
+    base.staleMs = live.staleMs || null;
+  }
   // True when nothing on screen is an estimate, so the manual sync has no job.
   base.allLive = !!(live.session && live.weekly && live.fable);
   return base;

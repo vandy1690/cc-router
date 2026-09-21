@@ -6,9 +6,12 @@
   "scripts": {
     "route": "node src/cli.js",
     "route:test": "node src/cli.js --selftest",
+    "check": "node scripts/check.mjs",
     "projects": "node src/projects-cli.js",
     "usage": "node src/usage-cli.js",
     "start": "electron .",
+    "app": "node scripts/make-app.mjs",
+    "app:remove": "node scripts/make-app.mjs --remove",
     "rebuild": "electron-rebuild -f -w node-pty",
     "postinstall": "electron-rebuild -f -w node-pty"
   },
@@ -16,6 +19,7 @@
   "author": "Steven Design Services LLC",
   "license": "UNLICENSED",
   "devDependencies": {
+    "@electron/packager": "^20.3.0",
     "@electron/rebuild": "^4.1.0",
     "electron": "^43.0.0"
   },
@@ -27,6 +31,6 @@
   },
   "private": true,
   "engines": {
-    "node": ">=18"
+    "node": ">=22.12"
   }
 }
