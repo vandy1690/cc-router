@@ -147,14 +147,14 @@ generation is a one-file change.
 
 ![The version recommendation and the routing card, both out from under the input box](docs/05-version-drawer.png)
 
-The screenshots above use demo data. The two below are the app in real use, with a
-live usage meter and real chat history.
+The screenshots above use demo data. The three below are the app in real use, on real
+chat history, with folder names blurred.
 
-![The app in use, waiting for a prompt](docs/06-real-compose.png)
+![The app waiting for a prompt: Recent chats and Projects in the rail, the usage panel pinned under them, and the composer naming the folder the next session will run in](docs/06-real-compose.png)
 
-![The app in use: a short prompt routed to Haiku 4.5 at low effort](docs/07-real-routed.png)
+![A prompt being sized up: the card reads "Picking a model, asking Haiku", Sonnet 5 and medium effort are preselected so you can launch without waiting, and every tier is one click away](docs/07-real-routed.png)
 
-![The app in use: a live Claude Code session on Sonnet 5 at medium effort, in its own tab](docs/09-real-session.png)
+![A live Claude Code session on Haiku 4.5 running in its own tab inside the app, with the rail and the usage panel still visible beside it](docs/09-real-session.png)
 
 ## The plugin
 
@@ -383,7 +383,11 @@ session, the week, the weekly Fable limit, and the week's split by surface. The 
 Code OAuth token is read from the macOS Keychain, used only in the request header, and
 never logged, stored, or refreshed by this app. Claude Code owns the login.
 
-<img src="docs/08-real-usage.png" alt="The usage panel in real use: the 5-hour session at 83%, the week at 95% in red, and the weekly Fable limit at 83%, each with its reset time" width="491" />
+<img src="docs/08-real-usage.png" alt="The usage panel with the live endpoint unavailable: a line reading “Anthropic is rate-limiting the usage endpoint” with a Details link, above the session at 5%, the week at 11%, and the weekly Fable limit at 5%, each showing where its number came from and when it resets" width="491" />
+
+The capture above is the fallback in action rather than the happy path: Anthropic was
+rate-limiting the endpoint, so the panel says so in one line, marks each row as synced
+rather than live, and leaves the numbers readable instead of blanking them.
 
 That endpoint is not a documented public API, so there are two fallbacks. First, the
 `anthropic-ratelimit-unified-5h-*` and `-7d-*` headers on a one-token request, which
